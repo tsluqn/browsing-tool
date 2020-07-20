@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Document</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <nav class="tab">
+    <div class="tab-title">信息</div>
+    <div class="tab-title">设置</div>
+  </nav>
+  <main>
+    <div class="info">
+      <p>已屏蔽</p>
+      <p><span id="normal-num"></span>条主评论</p>
+      <p><span id="inner-num"></span>条楼中楼</p>
+    </div>
+    <div class="setting">
+      <div class="key-list" id="key-list">
+        <div class="key-item"></div>
+      </div>
+      <div class="tool-bar">
+        <input type="text" id="key-input">
+        <button id="add-button">添加</button>
+        <p id="tips"></p>
+      </div>
+    </div>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>
