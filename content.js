@@ -27,10 +27,11 @@ function getObserve(rootnode) {
       var flag = false;
       var list = root.querySelector("div.comment-list");
       // 主评论区
-      if (list.innerHTML != "") {
+      if (list != null && list.innerHTML != "") {
         for (var i = 0; i < list.childElementCount; i++) {
           var ob = list.childNodes[i];
           var tartext = ob.querySelector(".con p.text").innerHTML;
+          tartext = tartext.split(' ').join('');
           if (settings.normal && findtext(tartext)) {
             ob.remove();
             result.normal++;
@@ -43,13 +44,14 @@ function getObserve(rootnode) {
               var rob = replybox.childNodes[j];
               var retartext = rob.querySelector("span.text-con");
               if (retartext != null) {
-                if (findtext(retartext.innerHTML)) {
+                retartext = retartext.innerHTML;
+                retartext = retartext.split(' ').join('');
+                if (findtext(retartext)) {
                   rob.remove();
                   result.inner++;
                   flag = true;
                 }
               }
-
             }
           }
         }
@@ -57,10 +59,9 @@ function getObserve(rootnode) {
       // 如果有屏蔽次数更新，则更新记录
       if (flag) {
         chrome.runtime.sendMessage({ type: 'set', value: result }, function (response) {
-          console.log('收到来自background的回复：' + response);
+          console.log('background对于set的回复：' + response);
         });
       }
-
     });
     observe.observe(root, { childList: true, subtree: true });
   })();
@@ -75,15 +76,28 @@ window.onload = function () {
     if (url.startsWith("https://www.bilibili.com/video/")) {
       var abc = document.querySelector("div.comment");
       getObserve(abc);
-    // 动态页面，包括总览和详细动态
+      // 动态页面，包括总览和详细动态
     } else if (url.startsWith("https://t.bilibili.com/")) {
-      var abcList = document.querySelectorAll("div.detail-content");
-      console.log(abcList);
-      console.log("first: " + document.querySelector("div.detail-content"));
-      for (var abc of abcList) {
-        console.log("in for " + abc);
-        getObserve(abc);
+      var uplist = document.querySelector(".feed-card .content");
+      console.log("start");
+      console.log(uplist);
+      // 动态总览
+      if (uplist != null) {
+        for (var up of uplist.childNodes) {
+          console.log("in for " + up);
+          getObserve(up);
+        }
+      // 动态详情
+      } else {
+        var abcList = document.querySelectorAll("div.detail-content");
+        console.log(abcList);
+        console.log("first: " + document.querySelector("div.detail-content"));
+        for (var abc of abcList) {
+          console.log("in for " + abc);
+          getObserve(abc);
+        }
       }
+
 
     } else {
       console.log("not target url");

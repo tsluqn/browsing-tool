@@ -1,32 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Document</title>
   <link rel="stylesheet" href="popup.css">
 </head>
+
 <body>
+  <h2>bilibili关键词屏蔽</h2>
   <nav class="tab">
-    <div class="tab-title">信息</div>
-    <div class="tab-title">设置</div>
+    <div class="tab-title active-tab" id="info-tab">信息</div>
+    <div class="tab-title" id="setting-tab">设置</div>
   </nav>
   <main>
-    <div class="info">
-      <p>已屏蔽</p>
-      <p><span id="normal-num"></span>条主评论</p>
-      <p><span id="inner-num"></span>条楼中楼</p>
+    <div class="info" id="info-page">
+      <p>当前已屏蔽</p>
+      <div class="info-detail">
+        <p><span id="normal-num"></span>条主评论</p>
+        <p><span id="inner-num"></span>条楼中楼</p>
+      </div>
     </div>
-    <div class="setting">
+    <div class="setting" id="setting-page">
       <div class="key-list" id="key-list">
         <div class="key-item"></div>
       </div>
       <div class="tool-bar">
         <input type="text" id="key-input">
         <button id="add-button">添加</button>
+        <button id="remove-button">移除</button>
+        <button id="export-button">导出到json</button>
         <p id="tips"></p>
       </div>
     </div>
   </main>
   <script src="popup.js"></script>
 </body>
+
 </html>

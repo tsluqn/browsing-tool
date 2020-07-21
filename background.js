@@ -1,4 +1,4 @@
-var list = ["qq", "ww"];
+var list = ["test"];
 // 配置
 var settings = {
   normal: true,
@@ -9,7 +9,23 @@ var result = {
 	normal: 0,
 	inner: 0
 };
-// 存储
+// 添加key
+function addKey(key) {
+	if (key == '') {
+		return 1;
+	} else if (list.includes(key)) {
+		return 2;
+	}
+	list.push(key);
+	return 0;
+}
+// 删除key
+function removeKey(key) {
+	var i = list.indexOf(key);
+	list.splice(i, 1);
+	return 0;
+}
+// 存储key
 function save() {
   chrome.storage.sync.set({ li: list, sett: settings }, function () {
 		console.log("a save ", list, settings);
