@@ -17,8 +17,8 @@
     <div class="info" id="info-page">
       <p>当前已屏蔽</p>
       <div class="info-detail">
-        <p><span id="normal-num"></span>条主评论</p>
-        <p><span id="inner-num"></span>条楼中楼</p>
+        <p><span id="normal-num">0</span>条主评论</p>
+        <p><span id="inner-num">0</span>条楼中楼</p>
       </div>
     </div>
     <div class="setting" id="setting-page">
@@ -26,15 +26,20 @@
         <div class="key-item"></div>
       </div>
       <div class="tool-bar">
-        <input type="text" id="key-input">
-        <button id="add-button">添加</button>
-        <button id="remove-button">移除</button>
-        <button id="export-button">导出到json</button>
+        <div class="add-bar">
+          <input type="text" id="key-input">
+          <input type="checkbox" id="key-reg"><label for="key-reg">正则</label>
+          <button id="add-button">添加</button>
+        </div>
+        <div class="more-setting">
+          <button id="more-button">更多设置</button>
+        </div>
         <p id="tips"></p>
       </div>
     </div>
   </main>
-  <script src="popup.js"></script>
+  <script src="./utils.js"></script>
+  <script src="./popup.js"></script>
 </body>
 
 </html>

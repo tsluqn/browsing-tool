@@ -1,65 +1,92 @@
-var list = ["test"];
-// 配置
-var settings = {
-  normal: true,
-  inner: true
-};
-// 运行结果
-var result = {
-	normal: 0,
-	inner: 0
-};
-// 添加key
-function addKey(key) {
-	if (key == '') {
-		return 1;
-	} else if (list.includes(key)) {
-		return 2;
+// 默认屏蔽列表
+let blockList = [{ text: '！', isReg: false }, { text: 'xz', isReg: false }]
+// 默认配置
+let settings = {
+	pages: {
+		video: true,
+		film: true,
+		article: true,
+		follow_news_abstract: true,
+		follow_news_detail: true
+	},
+	scope: {
+		main_comment: true,
+		sub_comment: true
 	}
-	list.push(key);
+}
+function getList() {
+	return blockList
+}
+function getSettings() {
+	return settings
+}
+// 添加屏蔽词
+function addKey(key, isReg) {
+	if (key === '') {
+		return 1;
+	} else {
+		for (const item of blockList) {
+			if (item.text === key && item.isReg === isReg) {
+				return 2;
+			}
+		}
+	}
+	blockList.push({ text: key, isReg: isReg });
 	return 0;
 }
-// 删除key
-function removeKey(key) {
-	var i = list.indexOf(key);
-	list.splice(i, 1);
+// 删除屏蔽词
+function removeKey(index) {
+	// let i = list.indexOf(key);
+	blockList.splice(index, 1);
 	return 0;
 }
-// 存储key
+// 保存屏蔽词列表及配置
 function save() {
-  chrome.storage.sync.set({ li: list, sett: settings }, function () {
-		console.log("a save ", list, settings);
+	chrome.storage.sync.set({ list: blockList, settings: settings }, function () {
+		console.log("a save ", blockList, settings);
 	});
 }
-// 第一次存储
-chrome.runtime.onInstalled.addListener(function () {
-	chrome.storage.sync.set({ li: list, sett: settings }, function () {
-		console.log("default save ", list, settings);
-	});
-});
 // 接受来自content的消息
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 	console.log('收到来自content的消息：');
 	// 获取关键词列表和设置信息
-	if (request.type=='get') {
-		sendResponse({ list:list, settings:settings});
-		console.log(list);
-	// 记录屏蔽次数
-	} else if (request.type == 'set') {
-		result = request.value;
+	if (request.type == 'get') {
+		sendResponse({ list: blockList, settings: settings });
+		console.log(blockList);
 	}
-	console.log(request);
 });
-// 每次启动时加载屏蔽词列表
-chrome.storage.sync.get('li', function (data) {
-	if (data.li) {
-		list = data.li;
-	}
-	console.log("read", data);
+// 每次启动时加载屏蔽词列表及配置
+chrome.storage.sync.get(['list', 'settings'], function (data) {
+	settings = data['settings'] || settings
+	blockList = data['list'] || blockList
+	save()
+	console.log(settings)
+	console.log(blockList)
 });
-// 每次启动时加载设置
-chrome.storage.sync.get('sett', function (data) {
-	if (data.sett) {
-		settings = data.sett;
-	}
-})
+function downloadText(content, filename) {
+  let a = document.createElement("a");
+  let data_blob = new Blob([content]);
+  a.href = window.URL.createObjectURL(data_blob);
+  a.download = filename;
+
+  let event = document.createEvent("MouseEvents");
+  event.initMouseEvent("click", true, true, document.defaultView, 0, 0, 0, 0, 0,
+    false, false, false, false, 0, null);
+  a.dispatchEvent(event);
+}
+function exportList() {
+  downloadText(JSON.stringify(blockList), "list.json");
+}
+function importList(file) {
+  let reader = new FileReader();
+  reader.readAsText(file, 'utf-8');
+
+	reader.onload = function () {
+		blockList = JSON.parse(this.result)
+		save()
+    console.log(blockList);
+  };
+}
+let aa = chrome.runtime.getManifest().options_page
+console.log(aa)
+console.log(chrome.extension.getURL(aa))

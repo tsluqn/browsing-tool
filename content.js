@@ -1,107 +1,113 @@
-var url = document.URL;
+let url = document.URL;
 console.log(url);
-var settings = {
-  normal: true,
-  inner: true
-};
-var result = {
-  normal: 0,
-  inner: 0
-};
-var textList = [];
-// 查找src字符串中是否有textList中的屏蔽词
-function findtext(src) {
-  for (var word of textList) {
-    if (src.includes(word)) {
-      console.log(word);
-      return true;
+console.log('running')
+let settings = {}
+let blockList = []
+// 运行结果
+let result =  {
+  main_comment: 0,
+  sub_comment: 0
+}
+// 查找text中是否存在被屏蔽内容
+function findBlocks(text) {
+  for (const blockItem of blockList) {
+    if ((blockItem.isReg && new RegExp(blockItem.text).test(text)) ||   // 使用正则
+      text.replace(/ /g, '').indexOf(blockItem.text) > -1) {            // 去除空格后使用关键词
+      return true
     }
   }
-  return false;
+  return false
 }
-// 监听rootnode节点下的节点更新
-function getObserve(rootnode) {
-  (function () {
-    var root = rootnode;
-    var observe = new MutationObserver(function () {
-      var flag = false;
-      var list = root.querySelector("div.comment-list");
-      // 主评论区
-      if (list != null && list.innerHTML != "") {
-        for (var i = 0; i < list.childElementCount; i++) {
-          var ob = list.childNodes[i];
-          var tartext = ob.querySelector(".con p.text").innerHTML;
-          tartext = tartext.split(' ').join('');
-          if (settings.normal && findtext(tartext)) {
-            ob.remove();
-            result.normal++;
-            flag = true;
-          }
-          // 主评论下的楼中楼评论区
-          else if (settings.inner) {
-            var replybox = ob.querySelector(".con div.reply-box");
-            for (var j = 0; j < replybox.childElementCount; j++) {
-              var rob = replybox.childNodes[j];
-              var retartext = rob.querySelector("span.text-con");
-              if (retartext != null) {
-                retartext = retartext.innerHTML;
-                retartext = retartext.split(' ').join('');
-                if (findtext(retartext)) {
-                  rob.remove();
-                  result.inner++;
-                  flag = true;
-                }
-              }
+// 给页面中page节点添加DOM监听
+function addObserver(page) {
+  let config = {
+    subtree: true,
+    childList: true
+  }
+  let comment_list = null
+  let obs = null
+  let isRoot = true
+  obs = new MutationObserver(() => {
+    // 当前是否监测的是评论列表的根节点
+    if (isRoot) {
+      comment_list = page.getElementsByClassName('comment-list')[0]
+      // 评论列表节点已加载，更换监测源
+      if (comment_list) {
+        isRoot = false
+        obs.disconnect()
+        obs.observe(comment_list, config)
+      }
+      return
+    }
+    let comments = comment_list.getElementsByClassName('list-item')
+    if (comments.length) {
+      // 遍历所有主评论
+      for (const comment of comments) {
+        if (comment.style.display === 'none') {
+          continue
+        }
+        let text = comment.getElementsByClassName('text')[0].innerHTML
+        if (findBlocks(text)) {
+          comment.style.display = 'none'
+          result.main_comment++
+        } else {
+          let replies = comment.getElementsByClassName('reply-item')
+          // 遍历所有子评论
+          for (const reply of replies) {
+            if (reply.style.display === 'none') {
+              continue
+            }
+            let text = reply.getElementsByClassName('text-con')[0].innerHTML
+            if (findBlocks(text)) {
+              reply.style.display = 'none'
+              result.sub_comment++
             }
           }
         }
       }
-      // 如果有屏蔽次数更新，则更新记录
-      if (flag) {
-        chrome.runtime.sendMessage({ type: 'set', value: result }, function (response) {
-          console.log('background对于set的回复：' + response);
-        });
-      }
-    });
-    observe.observe(root, { childList: true, subtree: true });
-  })();
-
-}
-window.onload = function () {
-  chrome.runtime.sendMessage({ type: 'get' }, function (response) {
-    console.log('收到来自background的回复：' + response);
-    textList = response.list;
-    settings = response.settings;
-    // 视频页面
-    if (url.startsWith("https://www.bilibili.com/video/")) {
-      var abc = document.querySelector("div.comment");
-      getObserve(abc);
-      // 动态页面，包括总览和详细动态
-    } else if (url.startsWith("https://t.bilibili.com/")) {
-      var uplist = document.querySelector(".feed-card .content");
-      console.log("start");
-      console.log(uplist);
-      // 动态总览
-      if (uplist != null) {
-        for (var up of uplist.childNodes) {
-          console.log("in for " + up);
-          getObserve(up);
-        }
-      // 动态详情
-      } else {
-        var abcList = document.querySelectorAll("div.detail-content");
-        console.log(abcList);
-        console.log("first: " + document.querySelector("div.detail-content"));
-        for (var abc of abcList) {
-          console.log("in for " + abc);
-          getObserve(abc);
-        }
-      }
-
-
-    } else {
-      console.log("not target url");
     }
+  })
+  obs.observe(page, config)
+}
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.type == 'get') {
+    console.log('sdfsdf')
+    console.log(result)
+    sendResponse(result);
+  }
+});
+window.onload = function () {
+  chrome.runtime.sendMessage({ type: 'get' }, response => {
+    console.log('收到来自background的回复：', response)
+    settings = response.settings
+    blockList = response.list
+    let page = null
+    if (url.indexOf('bilibili.com/video') > -1 && settings.pages.video) {
+      // 视频页
+      page = document.getElementsByClassName('comment')[0]
+    } else if (url.indexOf('bilibili.com/read') > -1 && settings.pages.article) {
+      // 专栏
+      page = document.getElementsByClassName('comment-holder')[0]
+      // page = document.getElementsByClassName('comment-list')[0]
+    } else if (url.indexOf('bilibili.com/bangumi') > -1 && settings.pages.film) {
+      // 番剧
+      // page = document.getElementById('comment_module')
+      page = document.getElementsByClassName('comm')[0]
+    } else if (url.indexOf('t.bilibili.com') > -1) {
+      if (settings.pages.follow_news_abstract) {
+        // 动态概览页
+        page = document.getElementsByClassName('feed-card')[0]
+        // console.log(page.outerHTML)
+      }
+      if (!page && settings.pages.follow_news_detail) {
+        // 动态详情页
+        page = document.getElementsByClassName('detail-card')[0]
+      }
+    } else {
+      return
+    }
+    console.log(page.outerHTML)
+    addObserver(page)
   });
 
 };

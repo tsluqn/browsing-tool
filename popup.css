@@ -1,8 +1,11 @@
+body{
+  width: 240px;
+}
 .tab{
   display: flex;
   /* justify-content: center; */
   width: 200px;
-  height: 60px;
+  height: 50px;
 }
 .tab-title{
   width: 60px;
@@ -12,8 +15,9 @@
 .key-list{
   width: 100%;
   height: 100px;
-  overflow: scroll;
+  overflow: auto;
   border: 1px solid black;
+  margin: 10px 0;
 }
 .setting{
   display: none;
@@ -37,4 +41,50 @@
   margin-right: 5px;
   font-size: 120%;
   color: rgb(255, 0, 0);
+}
+.key-item{
+  padding-left: 4px;
+  height: 20px;
+  font-size: 18px;
+  line-height: 20px;
+}
+.key-item:hover{
+  background-color: #b7b7ff;
+}
+.del-bt {
+  float: right;
+  width: 20px;
+  height: 20px;
+  text-align: center;
+  cursor: default;
+}
+.del-bt:hover{
+  background-color: #aaa;
+}
+.add-bar{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* margin-bottom: 10px; */
+}
+#key-input{
+  width: 120px;
+  /* flex: 1 1 auto; */
+}
+.reg-prefix::after{
+  float: right;
+  content: 'RegExp';
+  font-size: 10px;
+}
+.more-setting{
+  margin: 10px 0;
+  text-align: center;
+}
+#more-button{
+  width: 100px;
+  height: 30px;
+  border-radius: 6px;
+  background-color: #00f;
+  font-size: 14px;
+  color: #fff;
 }
