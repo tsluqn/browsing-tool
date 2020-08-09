@@ -1,14 +1,14 @@
 {
-  "name": "bilibili屏蔽助手",
+  "name": "bilibili评论区屏蔽工具",
   "version": "1.0.0",
-  "description": "关键词屏蔽b站评论",
+  "description": "添加关键词来屏蔽b站评论",
   "permissions":["storage", "tabs"],
   "background":{
     "scripts":["utils.js", "background.js"]
   },
   "browser_action":{
     "default_popup":"popup.html",
-    "default_icon": "bb.png"
+    "default_icon": "icon/logo.png"
   },
   "options_page": "options.html",
   "content_scripts":[{
@@ -17,7 +17,8 @@
     "run_at": "document_start"
   }],
   "icons": {
-    "48": "bb.png"
+    "48": "icon/logo.png"
   },
+  "homepage_url": "https://github.com/tsluqn/bilibili-comment-filter",
   "manifest_version": 2
 }

@@ -1,5 +1,5 @@
 // 默认屏蔽列表
-let blockList = [{ text: '！', isReg: false }, { text: 'xz', isReg: false }]
+let blockList = []
 // 默认配置
 let settings = {
 	pages: {
@@ -19,6 +19,12 @@ function getList() {
 }
 function getSettings() {
 	return settings
+}
+function setList(newList) {
+	blockList = newList
+}
+function setSettings(newSettings) {
+	settings = newSettings
 }
 // 添加屏蔽词
 function addKey(key, isReg) {
@@ -48,7 +54,7 @@ function save() {
 }
 // 接受来自content的消息
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-	console.log('收到来自content的消息：');
+	console.log('收到来自content的消息');
 	// 获取关键词列表和设置信息
 	if (request.type == 'get') {
 		sendResponse({ list: blockList, settings: settings });
@@ -60,8 +66,6 @@ chrome.storage.sync.get(['list', 'settings'], function (data) {
 	settings = data['settings'] || settings
 	blockList = data['list'] || blockList
 	save()
-	console.log(settings)
-	console.log(blockList)
 });
 function downloadText(content, filename) {
   let a = document.createElement("a");
@@ -84,9 +88,5 @@ function importList(file) {
 	reader.onload = function () {
 		blockList = JSON.parse(this.result)
 		save()
-    console.log(blockList);
   };
 }
-let aa = chrome.runtime.getManifest().options_page
-console.log(aa)
-console.log(chrome.extension.getURL(aa))

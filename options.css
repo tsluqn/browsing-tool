@@ -1,0 +1,44 @@
+html,body{
+  height: 100%;
+}
+ul{
+  list-style: none;
+  padding: 0;
+}
+body{
+  background-color: #eee;
+}
+.content{
+  width: 900px;
+  height: 100%;
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 0 20px;
+  padding-top: 100px;
+  display: flex;
+}
+.sidebar{
+  width: 300px;
+  margin: 10px;
+  margin-right: 0;
+  box-sizing: border-box;
+}
+.sidebar img{
+  height: 20px;
+}
+.sidebar .setting-list .setting-item{
+  height: 50px;
+  line-height: 50px;
+  font-size: 18px;
+}
+.active-item{
+  background-color: #fff;
+}
+.main{
+  flex: 1;
+  padding: 10px;
+  background-color: #fff
+}
+input{
+  margin: 10px;
+}

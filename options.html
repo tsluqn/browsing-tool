@@ -1,53 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-  <style>
-  *{
-    margin: 0;
-    padding: 0;
-  }
-  ul{
-    list-style: none;
-  }
-  .content{
-    width: 900px;
-    height: 500px;
-    margin: 0 auto;
-    padding: 0 20px;
-    padding-top: 100px;
-    display: flex;
-    background-color: aqua;
-  }
-  .sidebar{
-    width: 300px;
-    padding: 10px;
-    background-color: cadetblue;
-  }
-  .sidebar .setting-list .setting-item{
-    height: 50px;
-    line-height: 50px;
-    font-size: 18px;
-  }
-  .main{
-    flex: 1;
-    padding: 10px;
-    background-color: darkgoldenrod;
-  }
-  input{
-    margin: 10px;
-  }
-  </style>
+  <title>配置页</title>
+  <link rel="stylesheet" href="options.css">
 </head>
 <body>
   <div class="content">
     <div class="sidebar">
-      <h1>Bilibili屏蔽</h1>
+      <h1>Bilibili屏蔽
+        <a href="https://github.com/tsluqn/bilibili-comment-filter" target="_blank">
+          <img src="icon/github-logo.png" alt="">
+        </a>
+      </h1>
       <h2>设置</h2>
       <ul class="setting-list">
-        <li class="setting-item" id="normal">常规</li>
+        <li class="setting-item active-item" id="normal">常规</li>
       </ul>
     </div>
     <main class="main">
@@ -62,11 +31,12 @@
         </div>
         <h2>包含</h2>
         <div class="include">
-          <input type="checkbox" name="" id="bili-comment-main"><label for="bili-comment-main">主评论</label>
-          <input type="checkbox" name="" id="bili-comment-sub"><label for="bili-comment-sub">子评论（楼中楼）</label>
+          <input type="checkbox" id="bili-comment-main" disabled><label for="bili-comment-main">主评论</label>
+          <input type="checkbox" id="bili-comment-sub"><label for="bili-comment-sub">子评论（楼中楼）</label>
         </div>
         <button id="save-setting">保存</button>
         <h2>屏蔽列表</h2>
+        <button id="clear-list">清空列表</button>
         <button id="export-list">导出列表</button>
         <input type="file" id="import-file">
         <button id="import-list">导入列表</button>
