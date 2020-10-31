@@ -87,36 +87,39 @@
       // console.log('收到来自background的回复：', response)
       settings = response.settings
       blockList = response.list
-      let page = null
-      let isAbstractPage = false
-      if (url.indexOf('bilibili.com/video') > -1 && settings.pages.video) {
-        // 视频页
-        page = document.getElementsByClassName('comment')[0]
-      } else if (url.indexOf('bilibili.com/read') > -1 && settings.pages.article) {
-        // 专栏
-        page = document.getElementsByClassName('comment-holder')[0]
-        // page = document.getElementsByClassName('comment-list')[0]
-      } else if (url.indexOf('bilibili.com/bangumi') > -1 && settings.pages.film) {
-        // 番剧
-        // page = document.getElementById('comment_module')
-        page = document.getElementsByClassName('comm')[0]
-      } else if (url.indexOf('t.bilibili.com') > -1) {
-        if (settings.pages.follow_news_abstract) {
-          // 动态概览页
-          page = document.getElementsByClassName('feed-card')[0]
-          isAbstractPage = true
+      setTimeout(() => {
+        let page = null
+        let isAbstractPage = false
+        if (url.indexOf('bilibili.com/video') > -1 && settings.pages.video) {
+          // 视频页
+          // 使用class玄学问题失效了，改为父节点的id
+          page = document.getElementById('comment')
+          // page = document.getElementsByClassName('comment')[0]
+        } else if (url.indexOf('bilibili.com/read') > -1 && settings.pages.article) {
+          // 专栏
+          page = document.getElementsByClassName('comment-holder')[0]
+          // page = document.getElementsByClassName('comment-list')[0]
+        } else if (url.indexOf('bilibili.com/bangumi') > -1 && settings.pages.film) {
+          // 番剧
+          // page = document.getElementById('comment_module')
+          page = document.getElementsByClassName('comm')[0]
+        } else if (url.indexOf('t.bilibili.com') > -1) {
+          if (settings.pages.follow_news_abstract) {
+            // 动态概览页
+            page = document.getElementsByClassName('feed-card')[0]
+            isAbstractPage = true
+          }
+          if (!page && settings.pages.follow_news_detail) {
+            // 动态详情页
+            page = document.getElementsByClassName('detail-card')[0]
+            isAbstractPage = false
+          }
+        } else {
+          return
         }
-        if (!page && settings.pages.follow_news_detail) {
-          // 动态详情页
-          page = document.getElementsByClassName('detail-card')[0]
-          isAbstractPage = false
-        }
-      } else {
-        return
-      }
-      // console.log(page.outerHTML)
-      addObserver(page, isAbstractPage)
+        // console.log(page.outerHTML)
+        addObserver(page, isAbstractPage)
+      }, 100);
     });
-
   };
 }
