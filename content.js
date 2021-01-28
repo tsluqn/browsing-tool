@@ -1,9 +1,17 @@
 {
-  let url = document.URL;
-  console.log(url);
+  let urlMap = {
+    'index': 'bilibili.com',
+    'video': 'bilibili.com/video',
+    'read': 'bilibili.com/read',
+    'film': 'bilibili.com/bangumi',
+    'follow': 't.bilibili.com'
+  }
+  let url = document.URL
+  console.log(url)
   console.log('running')
   let settings = {}
   let blockList = []
+  let blockRemove = ['bili_manga', 'bili_dance', 'bili_cheese', 'bili_life', 'bili_fashion', 'bili_information', 'bili_ent', 'bili_food', 'bili_music', 'bili_digital', 'bili_movie', 'bili_teleplay', 'bili_cinephile', 'bili_documentary']
   // 运行结果
   let result = {
     main_comment: 0,
@@ -79,9 +87,9 @@
   }
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type == 'get') {
-      sendResponse(result);
+      sendResponse(result)
     }
-  });
+  })
   window.onload = function () {
     chrome.runtime.sendMessage({ type: 'get' }, response => {
       // console.log('收到来自background的回复：', response)
@@ -90,20 +98,17 @@
       setTimeout(() => {
         let page = null
         let isAbstractPage = false
-        if (url.indexOf('bilibili.com/video') > -1 && settings.pages.video) {
-          // 视频页
+        if (url.indexOf(urlMap.video) > -1 && settings.pages.video) {
           // 使用class玄学问题失效了，改为父节点的id
           page = document.getElementById('comment')
           // page = document.getElementsByClassName('comment')[0]
-        } else if (url.indexOf('bilibili.com/read') > -1 && settings.pages.article) {
-          // 专栏
+        } else if (url.indexOf(urlMap.read) > -1 && settings.pages.article) {
           page = document.getElementsByClassName('comment-holder')[0]
           // page = document.getElementsByClassName('comment-list')[0]
-        } else if (url.indexOf('bilibili.com/bangumi') > -1 && settings.pages.film) {
-          // 番剧
+        } else if (url.indexOf(urlMap.film) > -1 && settings.pages.film) {
           // page = document.getElementById('comment_module')
           page = document.getElementsByClassName('comm')[0]
-        } else if (url.indexOf('t.bilibili.com') > -1) {
+        } else if (url.indexOf(urlMap.follow) > -1) {
           if (settings.pages.follow_news_abstract) {
             // 动态概览页
             page = document.getElementsByClassName('feed-card')[0]
@@ -119,7 +124,21 @@
         }
         // console.log(page.outerHTML)
         addObserver(page, isAbstractPage)
-      }, 100);
-    });
-  };
+      }, 100)
+      if (url.indexOf(urlMap.index) > -1) {
+        removeComponents(blockRemove)
+      }
+    })
+  }
+  // 隐藏bilibili首页板块
+  function removeComponents(ids) {
+    for (const id of ids) {
+      let tag = document.getElementById(id)
+      if (tag) {
+        tag.style.display = 'none'
+      } else {
+        console.log('block ' + id + ': not found')
+      }
+    }
+  }
 }
