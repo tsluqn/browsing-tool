@@ -1,7 +1,17 @@
+let ids = ['bili_live', 'bili_douga', 'bili_anime', 'bili_guochuang', 'bili_manga', 'bili_music', 'bili_dance',
+  'bili_game', 'bili_technology', 'bili_cheese', 'bili_digital', 'bili_life', 'bili_food', 'bili_animal',
+  'bili_kichiku', 'bili_fashion', 'bili_information', 'bili_ent', 'bili_read', 'bili_movie', 'bili_teleplay',
+  'bili_cinephile', 'bili_documentary']
+let labels = ['直播', '动画', '番剧', '国创', '漫画', '音乐', '舞蹈', '游戏', '知识', '课堂', '数码', '生活', '美食',
+	'动物圈', '鬼畜', '时尚', '资讯', '娱乐', '专栏', '电影', 'TV剧', '影视', '纪录片']
+function getLabels() {
+	return ids
+}
 // 默认屏蔽列表
 let blockList = []
 // 默认配置
 let settings = {
+	modules: {},
 	pages: {
 		video: true,
 		film: true,
@@ -9,10 +19,23 @@ let settings = {
 		follow_news_abstract: true,
 		follow_news_detail: true
 	},
-	scope: {
+	types: {
 		main_comment: true,
 		sub_comment: true
 	}
+}
+function initModules() {
+	for (let i = 0; i < ids.length; i++){
+		settings.modules[ids[i]] = true
+	}
+}
+initModules()
+function alterSettings(title, key, value) {
+	if ((title in settings) && (key in settings[title]) && typeof (value) == 'boolean') {
+		settings[title][key] = value
+		return true
+	}
+	return false
 }
 function getList() {
 	return blockList
@@ -81,12 +104,15 @@ function downloadText(content, filename) {
 function exportList() {
   downloadText(JSON.stringify(blockList), "list.json");
 }
-function importList(file) {
+function importList(file, callback) {
   let reader = new FileReader();
   reader.readAsText(file, 'utf-8');
 
 	reader.onload = function () {
 		blockList = JSON.parse(this.result)
 		save()
+		if (callback) {
+			callback()
+		}
   };
 }

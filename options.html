@@ -1,50 +1,86 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>配置页</title>
+  <link href="./libs/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="options.css">
 </head>
+
 <body>
-  <div class="content">
-    <div class="sidebar">
-      <h1>Bilibili屏蔽
-        <a href="https://github.com/tsluqn/bilibili-comment-filter" target="_blank">
-          <img src="icon/github-logo.png" alt="">
-        </a>
-      </h1>
-      <h2>设置</h2>
-      <ul class="setting-list">
-        <li class="setting-item active-item" id="normal">常规</li>
-      </ul>
-    </div>
-    <main class="main">
-      <div id="normaldiv">
-        <h2>范围</h2>
-        <div class="url">
-          <input type="checkbox" name="" id="bili-video"><label for="bili-video">视频页</label>
-          <input type="checkbox" name="" id="bili-film"><label for="bili-film">番剧页</label>
-          <input type="checkbox" name="" id="bili-article"><label for="bili-article">专栏页</label>
-          <input type="checkbox" name="" id="bili-follow-news-abstract"><label for="bili-follow-news-abstract">关注动态概览页</label>
-          <input type="checkbox" name="" id="bili-follow-news-detail"><label for="bili-follow-news-detail">动态详细页</label>
-        </div>
-        <h2>包含</h2>
-        <div class="include">
-          <input type="checkbox" id="bili-comment-main" disabled><label for="bili-comment-main">主评论</label>
-          <input type="checkbox" id="bili-comment-sub"><label for="bili-comment-sub">子评论（楼中楼）</label>
-        </div>
-        <button id="save-setting">保存</button>
-        <h2>屏蔽列表</h2>
-        <button id="clear-list">清空列表</button>
-        <button id="export-list">导出列表</button>
-        <input type="file" id="import-file">
-        <button id="import-list">导入列表</button>
-        
+  <nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar"
+          aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="#">Bilibili 屏蔽器</a>
       </div>
-    </main>
+    </div>
+  </nav>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-2 sidebar">
+        <ul class="nav nav-sidebar">
+          <li class="active"><a id="blocks-btn">板块屏蔽</a></li>
+          <li><a id="commits-btn">评论屏蔽</a></li>
+        </ul>
+      </div>
+      <div id="blocks" class="col-md-10 col-md-offset-2 main">
+        <h1 class="page-header">板块屏蔽</h1>
+        <h2 class="sub-header">主页板块</h2>
+        <p class="help-block">选择需要保留在主页上的板块</p>
+        <form id="modules" class="form-inline">
+        </form>
+      </div>
+      <div id="commits" class="col-md-10 col-md-offset-2 main" style="display: none;">
+        <h1 class="page-header">评论屏蔽</h1>
+        <h2 class="sub-header">屏蔽范围</h2>
+        <p class="help-block">选择对哪些位置的评论进行屏蔽</p>
+        <form class="form">
+          <div id="types" class="form-group">
+          </div>
+          <div id="pages" class="form-group">
+          </div>
+        </form>
+        <h2 class="sub-header">屏蔽列表</h2>
+        <p class="help-block">插件将按照以下关键词进行屏蔽</p>
+        <form class="form-inline">
+          <div class="form-group">
+            <label for="key-word">关键词</label>
+            <input type="text" class="form-control" id="key-word" placeholder="需要屏蔽的词">
+          </div>
+          <div class="checkbox">
+            <label>
+              <input id="reg-checkbox" type="checkbox"> 正则表达式 </label>
+          </div>
+          <button id="add-btn" type="button" class="btn btn-default">添加</button>
+          <button id="clear-btn" type="button" class="btn btn-default">清空</button>
+        </form>
+        <form class="form-inline">
+          <div class="form-group">
+            <label for="upload-btn">导入列表</label>
+            <input type="file" id="upload-btn">
+          </div>
+          <button id="import-btn" type="button" class="btn btn-default">导入</button>
+          <button id="export-btn" type="button" class="btn btn-default">导出</button>
+        </form>
+        <div class="table-responsive table-border">
+          <table class="table table-striped" id="block-list">
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
-  <script src="./utils.js"></script>
+  <script src="./libs/jquery.min.js"></script>
+  <script src="./libs/bootstrap.min.js"></script>
   <script src="./options.js"></script>
 </body>
+
 </html>

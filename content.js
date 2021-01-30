@@ -66,7 +66,7 @@
           if (findBlocks(text)) {
             comment.style.display = 'none'
             result.main_comment++
-          } else if (settings.scope.sub_comment) {
+          } else if (settings.types.sub_comment) {
             let replies = comment.getElementsByClassName('reply-item')
             // 遍历所有子评论
             for (const reply of replies) {
@@ -95,6 +95,16 @@
       // console.log('收到来自background的回复：', response)
       settings = response.settings
       blockList = response.list
+      blockRemove = []
+      for (const key in response.settings.modules) {
+        if (Object.hasOwnProperty.call(response.settings.modules, key)) {
+          const element = response.settings.modules[key];
+          if (!element) {
+            blockRemove.push(key)
+          }
+        }
+      }
+      // console.log(blockRemove)
       setTimeout(() => {
         let page = null
         let isAbstractPage = false
