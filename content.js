@@ -1,154 +1,229 @@
-{
-  let urlMap = {
-    'index': 'bilibili.com',
-    'video': 'bilibili.com/video',
-    'read': 'bilibili.com/read',
-    'film': 'bilibili.com/bangumi',
-    'follow': 't.bilibili.com'
-  }
-  let url = document.URL
-  console.log(url)
-  console.log('running')
-  let settings = {}
-  let blockList = []
-  let blockRemove = ['bili_manga', 'bili_dance', 'bili_cheese', 'bili_life', 'bili_fashion', 'bili_information', 'bili_ent', 'bili_food', 'bili_music', 'bili_digital', 'bili_movie', 'bili_teleplay', 'bili_cinephile', 'bili_documentary']
-  // 运行结果
-  let result = {
-    main_comment: 0,
-    sub_comment: 0
-  }
-  // 查找text中是否存在被屏蔽内容
-  function findBlocks(text) {
-    for (const blockItem of blockList) {
-      if ((blockItem.isReg && new RegExp(blockItem.text).test(text)) ||   // 使用正则
-        text.replace(/ /g, '').indexOf(blockItem.text) > -1) {            // 去除空格后使用关键词
-        return true
-      }
+/**
+ * 检查内容是否包含屏蔽词
+ * @param {string} text 目标内容
+ * @param {string[]} blockList 屏蔽词列表
+ * @returns 含有的屏蔽词，否则为null
+ */
+function checkBlocks(text, blockList) {
+  for (const blockItem of blockList) {
+    // 去除空格后检测关键词
+    if (text.replace(/ /g, '').includes(blockItem)) {
+      return blockItem;
     }
-    return false
   }
-  // 给页面中page节点添加DOM监听，动态概览页的方法有所不同
-  function addObserver(page, isAbstractPage = false) {
-    let config = {
-      subtree: true,
-      childList: true
+  return null;
+}
+
+let globalSettings = {
+  csdn: {
+    enable: true
+  },
+  baidu: {
+    enable: true,
+    blockList: ['!', '?', '！', '？']
+  },
+  bilibili: {
+    enable: true,
+    comment: {
+      enable: true,
+      blockList: []
+    },
+    live: {
+      enable: true,
+      blockList: ['见', '聊', '甜', '美', '帅', '姐', '妹', '电台', '舞']
+    },
+    component: {
+      enable: true,
+      blockList: []
     }
-    let comment_list = null
-    let obs = null
-    let isRoot = true
-    obs = new MutationObserver(() => {
-      // 当前是否监测的是评论列表的根节点
-      if (isRoot) {
-        comment_list = page.getElementsByClassName('comment-list')[0]
-        // 评论列表节点已加载，更换监测源
-        if (comment_list) {
-          isRoot = false
-          if (!isAbstractPage) {
-            obs.disconnect()
-            obs.observe(comment_list, config)
-          }
-        }
-        return
-      }
-      let comments = null
-      if (isAbstractPage) {
-        comments = page.getElementsByClassName('list-item')
-      } else {
-        comments = comment_list.getElementsByClassName('list-item')
-      }
-      if (comments.length) {
-        // 遍历所有主评论
-        for (const comment of comments) {
-          if (comment.style.display === 'none') {
-            continue
-          }
-          let text = comment.getElementsByClassName('text')[0].innerHTML
-          if (findBlocks(text)) {
-            comment.style.display = 'none'
-            result.main_comment++
-          } else if (settings.types.sub_comment) {
-            let replies = comment.getElementsByClassName('reply-item')
-            // 遍历所有子评论
-            for (const reply of replies) {
-              if (reply.style.display === 'none') {
-                continue
-              }
-              let text = reply.getElementsByClassName('text-con')[0].innerHTML
-              if (findBlocks(text)) {
-                reply.style.display = 'none'
-                result.sub_comment++
-              }
-            }
-          }
-        }
-      }
-    })
-    obs.observe(page, config)
   }
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.type == 'get') {
-      sendResponse(result)
+};
+
+function initGlobalSettings() {
+  
+}
+// 付费后查看的内容无法显示，本身不加载 https://blog.csdn.net/weixin_43582101/article/details/122168550
+class CSDNHandler {
+  /**
+   * 处理入口
+   * @param {string} url 
+   */
+  handle(url) {
+    if (/blog.csdn.net\/.+/.test(url)) {
+      this.showHiddenContent();
     }
-  })
-  window.onload = function () {
-    chrome.runtime.sendMessage({ type: 'get' }, response => {
-      // console.log('收到来自background的回复：', response)
-      settings = response.settings
-      blockList = response.list
-      blockRemove = []
-      for (const key in response.settings.modules) {
-        if (Object.hasOwnProperty.call(response.settings.modules, key)) {
-          const element = response.settings.modules[key];
-          if (!element) {
-            blockRemove.push(key)
-          }
-        }
-      }
-      // console.log(blockRemove)
-      setTimeout(() => {
-        let page = null
-        let isAbstractPage = false
-        if (url.indexOf(urlMap.video) > -1 && settings.pages.video) {
-          // 使用class玄学问题失效了，改为父节点的id
-          page = document.getElementById('comment')
-          // page = document.getElementsByClassName('comment')[0]
-        } else if (url.indexOf(urlMap.read) > -1 && settings.pages.article) {
-          page = document.getElementsByClassName('comment-holder')[0]
-          // page = document.getElementsByClassName('comment-list')[0]
-        } else if (url.indexOf(urlMap.film) > -1 && settings.pages.film) {
-          // page = document.getElementById('comment_module')
-          page = document.getElementsByClassName('comm')[0]
-        } else if (url.indexOf(urlMap.follow) > -1) {
-          if (settings.pages.follow_news_abstract) {
-            // 动态概览页
-            page = document.getElementsByClassName('feed-card')[0]
-            isAbstractPage = true
-          }
-          if (!page && settings.pages.follow_news_detail) {
-            // 动态详情页
-            page = document.getElementsByClassName('detail-card')[0]
-            isAbstractPage = false
-          }
-        } else {
-          return
-        }
-        // console.log(page.outerHTML)
-        addObserver(page, isAbstractPage)
-      }, 100)
-      if (url.indexOf(urlMap.index) > -1) {
-        removeComponents(blockRemove)
-      }
-    })
   }
-  // 隐藏bilibili首页板块
-  function removeComponents(ids) {
-    for (const id of ids) {
-      let tag = document.getElementById(id)
-      if (tag) {
-        tag.style.display = 'none'
-      } else {
-        console.log('block ' + id + ': not found')
-      }
-    }
+  /**
+   * 显示需要关注后查看的内容，如 https://blog.csdn.net/weixin_33802505/article/details/86134809
+   */
+  showHiddenContent() {
+    $('#article_content').css({
+      'overflow': '',
+      'height': ''
+    });
+    $('.hide-article-box.hide-article-pos.text-center').hide();
   }
 }
+class BaiduHandler {
+  constructor() {
+  }
+  /**
+   * 处理入口
+   * @param {string} url 
+   */
+  handle(url) {
+    if (/baijiahao.baidu.com/.test(url)) {
+      this.hiddenComment();
+    }
+  }
+  /**
+   * 屏蔽百家号评论区
+   */
+  hiddenComment() {
+    const root = $('#commentModule');
+    const observer = new MutationObserver((mutations) => {
+      $('.xcp-list-list > div').each(function() {
+        if (checkBlocks($(this).text(), globalSettings.baidu.blockList)) {
+          $(this).hide();
+        }
+      });
+    });
+    observer.observe(root[0], { subtree: true, childList: true });
+  }
+}
+// TODO 待重构
+class BilibiliHandler {
+  constructor() {
+    this.commentBlockResult = {
+      main: 0,
+      sub: 0
+    }
+  }
+
+  initConfig(callback) {
+    chrome.runtime.sendMessage({ type: 'get' }, response => {
+      this.settings = response.settings;
+      this.blockList = response.list;
+      this.blockRemove = [];
+      for (const key in this.settings.modules) {
+        const element = this.settings.modules[key];
+        if (!element) {
+          this.blockRemove.push(key)
+        }
+      }
+      
+      chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        if (request.type == 'get') {
+          sendResponse(this.commentBlockResult);
+        }
+      })
+      callback();
+    })
+  }
+  handle(url) {
+    this.initConfig(() => {
+      if (/bilibili.com\/.+/.test(url)) {
+        this.hiddenComment();
+      }
+      if (/www.bilibili.com/.test(url)) {
+        this.hiddenComponent();
+        this.hiddenLive();
+        this.hiddenAd();
+      }
+    });
+  }
+  hiddenComment() {
+    const app = $('#app,.page-container')[0];
+    const observer = new MutationObserver((mutations) => {
+      let obj = mutations.some((value, index) =>
+        $(value.target).hasClass('bb-comment') || $(value.target).hasClass('reply-box'));
+      if (obj) {
+        this.hiddenCommentOf($('.bb-comment .list-item'));
+      }
+    })
+    observer.observe(app, { subtree: true, childList: true })
+  }
+  hiddenCommentOf(comments) {
+    const self = this;
+    comments.each(function () {
+      if (checkBlocks($('text', $(this)).text(), self.blockList)) {
+        $(this).hide();
+        self.commentBlockResult.main++;
+      } else if (self.settings.types.sub_comment) {
+        $('.reply-item', $(this)).each(function () {
+          if (checkBlocks($(this).text(), self.blockList)) {
+            $(this).hide();
+            self.commentBlockResult.sub++;
+          }
+        });
+      }
+    });
+  }
+  /**
+   * 屏蔽首页直播box
+   */
+  hiddenLive() {
+    // FIXME 点击直播box刷新按钮，有概率不加载任何box，也不触发MutationObserver监听
+    // 未加载完成，延时
+    setTimeout(() => {
+      let root = $('#bili_live');
+      if (root.length === 0) {
+        console.log('get bili_live module failed');
+        return;
+      }
+      this.hiddenLiveItem(root);
+      let observer = new MutationObserver(() => {
+        this.hiddenLiveItem(root);
+      })
+      observer.observe(root[0], { childList: true, subtree: true });
+    }, 1000);
+  }
+  /**
+   * 屏蔽节点下的直播box
+   * @param {jQuery} root jQuery节点
+   */
+  hiddenLiveItem(root) {
+    // DOM变动时未加载完成，延时
+    setTimeout(() => {
+      $('.live-card', root).each(function () {
+        const text = $('.up > .txt', $(this)).text();
+        const target = checkBlocks(text, globalSettings.bilibili.live.blockList);
+        if (target) {
+          console.log(`check ${target} from ${text}`);
+          $(this).hide();
+          $(this).remove();
+        }
+      });
+    }, 1000);
+  }
+  /**
+   * 去除广告横栏
+   */
+  hiddenAd() {
+    // $('.banner-card').hide();
+  }
+  hiddenComponent() {
+    setTimeout(() => {
+      let ids = this.blockRemove;
+      for (const id of ids) {
+        $(`#${id}`).hide();
+      }
+    }, 1000);
+  }
+}
+
+$(document).ready(() => {
+  const url = document.URL;
+  
+  if (/bilibili.com/.test(url)) {
+    new BilibiliHandler().handle(url);
+  } else if (/csdn.net/.test(url)) {
+    new CSDNHandler().handle(url);
+  } else if (/baidu.com/.test(url)) {
+    new BaiduHandler().handle(url);
+  } else if (/zhihu.com/.test(url)){
+
+  } else {
+
+  }
+});

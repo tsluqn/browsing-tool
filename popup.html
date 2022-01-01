@@ -4,41 +4,17 @@
 <head>
   <meta charset="UTF-8">
   <title>Document</title>
+  <link rel="stylesheet" href="./libs/bootstrap.min.css">
   <link rel="stylesheet" href="popup.css">
 </head>
 
 <body>
-  <h2>bilibili关键词屏蔽</h2>
-  <nav class="tab">
-    <div class="tab-title active-tab" id="info-tab">信息</div>
-    <div class="tab-title" id="setting-tab">设置</div>
-  </nav>
-  <main>
-    <div class="info" id="info-page">
-      <p>当前已屏蔽</p>
-      <div class="info-detail">
-        <p><span id="normal-num">0</span>条主评论</p>
-        <p><span id="inner-num">0</span>条子评论</p>
-      </div>
-    </div>
-    <div class="setting" id="setting-page">
-      <div class="key-list" id="key-list">
-        <div class="key-item"></div>
-      </div>
-      <div class="tool-bar">
-        <div class="add-bar">
-          <input type="text" id="key-input">
-          <input type="checkbox" id="key-reg"><label for="key-reg">正则</label>
-          <button id="add-button">添加</button>
-        </div>
-        <div class="more-setting">
-          <button id="more-button">更多设置</button>
-        </div>
-        <p id="tips"></p>
-      </div>
-    </div>
-  </main>
-  <script src="./utils.js"></script>
+  <section class="main-content">
+    <ul id="video-list" class="list-group" >
+    </ul>
+  </section>
+  <script src="./libs/jquery.min.js"></script>
+  <script src="./libs/bootstrap.min.js"></script>
   <script src="./popup.js"></script>
 </body>
 

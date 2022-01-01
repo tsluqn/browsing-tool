@@ -49,6 +49,144 @@ function setList(newList) {
 function setSettings(newSettings) {
 	settings = newSettings
 }
+
+class VideoDownloader {
+	constructor() {
+		this.videoTabMap = new Map();
+	}
+	/**
+	 * 请求二进制数据
+	 * @param {string} url url
+	 * @param {(data: ArrayBuffer) => void} callback 回调函数
+	 */
+	requestBinary(url, callback) {
+		const xhr = new XMLHttpRequest();
+		xhr.open('GET', url, true);
+		xhr.responseType = 'arraybuffer';
+		xhr.onload = function(oEvent) {
+			callback(xhr.response);
+		};
+		xhr.send();
+	}
+	/**
+	 * 下载指定的数据
+	 * @param {BlobPart[]} binaryDataList 数据
+	 * @param {string} filename 文件名
+	 */
+	downloadBinary(binaryDataList, filename) {
+		let blobData = new Blob(binaryDataList);
+		let anchor = $('<a></a>');
+		anchor.attr({
+			'href': window.URL.createObjectURL(blobData),
+			'download': filename
+		});
+		console.log(anchor);
+		anchor[0].click();
+	}
+	/**
+	 * 获取m3u8 url
+	 * @param {string} rawUrl 原始url
+	 * @returns 真实url
+	 */
+	getM3U8Url(rawUrl) {
+		const questPos = rawUrl.indexOf('?');
+		let rightPart = '';
+		if (questPos > -1) {
+			rightPart = rawUrl.substring(questPos + 1);
+		}
+		if (rightPart.match(/https?:\/\/.*\/.+\.m3u8/)) {
+			return rightPart.match(/https?:\/\/.*\/.+\.m3u8/);
+		} else {
+			return rawUrl;
+		}
+	}
+	/**
+	 * 根据m3u8文件获取分片url
+	 * @param {string} manifestUrl m3u8文件url
+	 * @param {string} videoPieceName 分片文件名
+	 * @returns 分片url
+	 */
+	getPieceUrl(manifestUrl, videoPieceName) {
+		const questPos = manifestUrl.indexOf('?');
+		let rightPart = '';
+		if (questPos > -1) {
+			rightPart = manifestUrl.substring(questPos + 1);
+		}
+		let manifestRelativePath;
+		if (rightPart.match(/(https?:\/\/.*\/).+\.m3u8/)) {
+			manifestRelativePath = rightPart.match(/(https?:\/\/.*\/).+\.m3u8/)[1];
+		} else {
+			manifestRelativePath = manifestUrl.match(/(https?:\/\/.*\/).+\.m3u8/)[1];
+		}
+		if (videoPieceName.startsWith('/')) {
+			const rootPath = manifestRelativePath.match(/(https?:\/\/.*?)\//)[1];
+			return rootPath + videoPieceName;
+		}
+		return manifestRelativePath + videoPieceName;
+	}
+	/**
+	 * 根据m3u8文件下载视频
+	 * @param {string} fileUrl m3u8文件url
+	 * @param {string} filename 保存文件名
+	 * @param {(pieceName: string, index: number, length: number) => void} onStep 已下载第index，总length个分片后回调
+	 * @param {(isSuccess: boolean) => void} onFinish 完成后回调
+	 */
+	downloadVideoFromM3U8(fileUrl, filename, onStep, onFinish) {
+		$.get(fileUrl, (manifestData) => {
+			// get m3u8 manifest file
+			const videoPieceList = manifestData.split('\n').filter(line => line.includes('.ts'));
+			if (videoPieceList.length === 0) {
+				onFinish(false);
+				return;
+			}
+			// request each piece and merge to one file and download
+			const dataList = [];
+			videoPieceList.forEach((pieceName, index) => {
+				requestBinary(getPieceUrl(fileUrl, pieceName), (binaryData) => {
+					dataList.push(binaryData);
+					if (onStep) {
+						onStep(pieceName, dataList.length, videoPieceList.length);
+					}
+					if (index === videoPieceList.length - 1) {
+						downloadBinary(dataList, filename);
+						onFinish(true);
+					}
+				});
+			});
+		});
+	}
+	/**
+	 * 获取tab下检测到的视频url
+	 * @param {number} tabId tabId
+	 * @returns 视频url列表
+	 */
+	getVideoList(tabId) {
+		if (!this.videoTabMap.has(tabId)) {
+			return [];
+		}
+		return this.videoTabMap.get(tabId);
+	}
+	/**
+	 * 添加新url
+	 * @param {number} tabId tabId
+	 * @param {string} videoUrl video url
+	 */
+	addVideoItem(tabId, videoUrl) {
+		if (!this.videoTabMap.has(tabId)) {
+			this.videoTabMap.set(tabId, []);
+		}
+		this.videoTabMap.get(tabId).push(videoUrl);
+	}
+}
+
+const videoDownloader = new VideoDownloader();
+
+chrome.webRequest.onCompleted.addListener((obj) => {
+	if (obj.url.includes("m3u8") && !obj.initiator.includes('chrome-extension')) {
+		console.log(obj);
+		videoDownloader.addVideoItem(obj.tabId, getM3U8Url(obj.url));
+	}
+}, { urls: ['<all_urls>'] });
 // 添加屏蔽词
 function addKey(key, isReg) {
 	if (key === '') {
