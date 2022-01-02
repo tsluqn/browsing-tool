@@ -1,7 +1,7 @@
 {
-  "name": "网页浏览小工具",
-  "version": "2.0.0",
-  "description": "集成对多个网站的小功能",
+  "name": "浏览助手",
+  "version": "1.0.0",
+  "description": "集成多个小功能的浏览助手",
   "permissions": [
     "storage",
     "tabs",

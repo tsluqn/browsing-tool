@@ -20,7 +20,7 @@ let globalSettings = {
   },
   baidu: {
     enable: true,
-    blockList: ['!', '?', '！', '？']
+    blockList: []
   },
   bilibili: {
     enable: true,
@@ -30,23 +30,23 @@ let globalSettings = {
     },
     live: {
       enable: true,
-      blockList: ['见', '聊', '甜', '美', '帅', '姐', '妹', '电台', '舞']
+      blockList: []
     },
     component: {
       enable: true,
+      componentList: [],
       blockList: []
-    }
+    },
+  },
+  videoDownloader: {
+    enable: true
   }
 };
 
-function initGlobalSettings() {
-  
-}
-// 付费后查看的内容无法显示，本身不加载 https://blog.csdn.net/weixin_43582101/article/details/122168550
 class CSDNHandler {
   /**
    * 处理入口
-   * @param {string} url 
+   * @param {string} url url
    */
   handle(url) {
     if (/blog.csdn.net\/.+/.test(url)) {
@@ -54,7 +54,7 @@ class CSDNHandler {
     }
   }
   /**
-   * 显示需要关注后查看的内容，如 https://blog.csdn.net/weixin_33802505/article/details/86134809
+   * 显示需要关注后查看的内容
    */
   showHiddenContent() {
     $('#article_content').css({
@@ -64,12 +64,11 @@ class CSDNHandler {
     $('.hide-article-box.hide-article-pos.text-center').hide();
   }
 }
+
 class BaiduHandler {
-  constructor() {
-  }
   /**
    * 处理入口
-   * @param {string} url 
+   * @param {string} url url
    */
   handle(url) {
     if (/baijiahao.baidu.com/.test(url)) {
@@ -82,7 +81,7 @@ class BaiduHandler {
   hiddenComment() {
     const root = $('#commentModule');
     const observer = new MutationObserver((mutations) => {
-      $('.xcp-list-list > div').each(function() {
+      $('.xcp-list-list > div').each(function () {
         if (checkBlocks($(this).text(), globalSettings.baidu.blockList)) {
           $(this).hide();
         }
@@ -91,68 +90,62 @@ class BaiduHandler {
     observer.observe(root[0], { subtree: true, childList: true });
   }
 }
-// TODO 待重构
+
 class BilibiliHandler {
   constructor() {
+    // 屏蔽结果
     this.commentBlockResult = {
       main: 0,
       sub: 0
-    }
+    };
   }
-
-  initConfig(callback) {
-    chrome.runtime.sendMessage({ type: 'get' }, response => {
-      this.settings = response.settings;
-      this.blockList = response.list;
-      this.blockRemove = [];
-      for (const key in this.settings.modules) {
-        const element = this.settings.modules[key];
-        if (!element) {
-          this.blockRemove.push(key)
-        }
-      }
-      
-      chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        if (request.type == 'get') {
-          sendResponse(this.commentBlockResult);
-        }
-      })
-      callback();
-    })
-  }
+  /**
+   * 处理入口
+   * @param {string} url url
+   */
   handle(url) {
-    this.initConfig(() => {
-      if (/bilibili.com\/.+/.test(url)) {
+    if (/bilibili.com\/.+/.test(url)) {
+      if (globalSettings.bilibili.comment.enable) {
         this.hiddenComment();
       }
-      if (/www.bilibili.com/.test(url)) {
+    }
+    if (/www.bilibili.com(\/\?)?/.test(url)) {
+      if (globalSettings.bilibili.component.enable) {
         this.hiddenComponent();
-        this.hiddenLive();
-        this.hiddenAd();
       }
-    });
+      if (globalSettings.bilibili.live.enable) {
+        this.hiddenLive();
+      }
+    }
   }
+  /**
+   * 屏蔽评论
+   */
   hiddenComment() {
     const app = $('#app,.page-container')[0];
     const observer = new MutationObserver((mutations) => {
-      let obj = mutations.some((value, index) =>
-        $(value.target).hasClass('bb-comment') || $(value.target).hasClass('reply-box'));
-      if (obj) {
-        this.hiddenCommentOf($('.bb-comment .list-item'));
-      }
+      this.hiddenCommentOf($('.bb-comment .list-item'));
     })
-    observer.observe(app, { subtree: true, childList: true })
+    observer.observe(app, { subtree: true, childList: true });
   }
+  /**
+   * 屏蔽指定评论节点的内容
+   * @param {jQuery} comments jQuery节点
+   */
   hiddenCommentOf(comments) {
     const self = this;
     comments.each(function () {
-      if (checkBlocks($('text', $(this)).text(), self.blockList)) {
-        $(this).hide();
+      // 主评论
+      let text = $('.text', $(this)).text();
+      if (checkBlocks(text, globalSettings.bilibili.comment.blockList)) {
+        $(this).remove();
         self.commentBlockResult.main++;
-      } else if (self.settings.types.sub_comment) {
+      } else {
         $('.reply-item', $(this)).each(function () {
-          if (checkBlocks($(this).text(), self.blockList)) {
-            $(this).hide();
+          // 子评论
+          let text = $(this).text();
+          if (checkBlocks(text, globalSettings.bilibili.comment.blockList)) {
+            $(this).remove();
             self.commentBlockResult.sub++;
           }
         });
@@ -168,7 +161,7 @@ class BilibiliHandler {
     setTimeout(() => {
       let root = $('#bili_live');
       if (root.length === 0) {
-        console.log('get bili_live module failed');
+        console.log('[Browsing-Helper][bilibili-live]: get bili_live component failed');
         return;
       }
       this.hiddenLiveItem(root);
@@ -189,7 +182,7 @@ class BilibiliHandler {
         const text = $('.up > .txt', $(this)).text();
         const target = checkBlocks(text, globalSettings.bilibili.live.blockList);
         if (target) {
-          console.log(`check ${target} from ${text}`);
+          console.log(`[Browsing-Helper][bilibili-live]: check "${target}" from "${text}"`);
           $(this).hide();
           $(this).remove();
         }
@@ -197,33 +190,60 @@ class BilibiliHandler {
     }, 1000);
   }
   /**
-   * 去除广告横栏
+   * 屏蔽首页板块
    */
-  hiddenAd() {
-    // $('.banner-card').hide();
-  }
   hiddenComponent() {
     setTimeout(() => {
-      let ids = this.blockRemove;
+      let ids = globalSettings.bilibili.component.blockList;
       for (const id of ids) {
         $(`#${id}`).hide();
       }
     }, 1000);
   }
 }
+/**
+ * 更新首页板块列表
+ * @returns 当前板块列表
+ */
+function refreshComponentList() {
+  let components = [];
+  $('.storey-box .proxy-box > div').each(function () {
+    const id = $(this).attr('id');
+    const title = $('.storey-title .name', $(this)).text();
+    components.push({ id, title });
+  });
+  return components;
+}
+
+const handler = {
+  bilibiliHandler: null,
+  csdnHandler: null,
+  baiduHandler: null
+};
 
 $(document).ready(() => {
   const url = document.URL;
-  
-  if (/bilibili.com/.test(url)) {
-    new BilibiliHandler().handle(url);
-  } else if (/csdn.net/.test(url)) {
-    new CSDNHandler().handle(url);
-  } else if (/baidu.com/.test(url)) {
-    new BaiduHandler().handle(url);
-  } else if (/zhihu.com/.test(url)){
 
-  } else {
+  chrome.runtime.sendMessage({ type: 'setting' }, response => {
+    globalSettings = response;
+    if (/bilibili.com/.test(url) && globalSettings.bilibili.enable) {
+      handler.bilibiliHandler = new BilibiliHandler();
+      handler.bilibiliHandler.handle(url);
+    } else if (/csdn.net/.test(url) && globalSettings.csdn.enable) {
+      handler.csdnHandler = new CSDNHandler();
+      handler.csdnHandler.handle(url);
+    } else if (/baidu.com/.test(url) && globalSettings.baidu.enable) {
+      handler.baiduHandler = new BaiduHandler();
+      handler.baiduHandler.handle(url);
+    } else {
+    }
+  })
+});
 
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.type === 'refresh') {
+		sendResponse(refreshComponentList());
+  } else if (request.type === 'result') {
+    sendResponse(handler.bilibiliHandler.commentBlockResult);
   }
 });

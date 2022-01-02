@@ -1,58 +1,56 @@
-let ids = ['bili_live', 'bili_douga', 'bili_anime', 'bili_guochuang', 'bili_manga', 'bili_music', 'bili_dance',
-  'bili_game', 'bili_technology', 'bili_cheese', 'bili_digital', 'bili_life', 'bili_food', 'bili_animal',
-  'bili_kichiku', 'bili_fashion', 'bili_information', 'bili_ent', 'bili_read', 'bili_movie', 'bili_teleplay',
-  'bili_cinephile', 'bili_documentary']
-let labels = ['直播', '动画', '番剧', '国创', '漫画', '音乐', '舞蹈', '游戏', '知识', '课堂', '数码', '生活', '美食',
-	'动物圈', '鬼畜', '时尚', '资讯', '娱乐', '专栏', '电影', 'TV剧', '影视', '纪录片']
-function getLabels() {
-	return ids
+/**
+ * 获取默认配置
+ * @returns 默认空配置
+ */
+function getDefaultSettings() {
+	let settings = {
+		csdn: {
+			enable: true
+		},
+		baidu: {
+			enable: true,
+			blockList: []
+		},
+		bilibili: {
+			enable: true,
+			comment: {
+				enable: true,
+				blockList: []
+			},
+			live: {
+				enable: true,
+				blockList: []
+			},
+			component: {
+				enable: true,
+				componentList: [],
+				blockList: []
+			}
+		},
+		videoDownloader: {
+			enable: true
+		}
+	};
+	return settings;
 }
-// 默认屏蔽列表
-let blockList = []
-// 默认配置
-let settings = {
-	modules: {},
-	pages: {
-		video: true,
-		film: true,
-		article: true,
-		follow_news_abstract: true,
-		follow_news_detail: true
-	},
-	types: {
-		main_comment: true,
-		sub_comment: true
-	}
-}
-function initModules() {
-	for (let i = 0; i < ids.length; i++){
-		settings.modules[ids[i]] = true
-	}
-}
-initModules()
-function alterSettings(title, key, value) {
-	if ((title in settings) && (key in settings[title]) && typeof (value) == 'boolean') {
-		settings[title][key] = value
-		return true
-	}
-	return false
-}
-function getList() {
-	return blockList
-}
-function getSettings() {
-	return settings
-}
-function setList(newList) {
-	blockList = newList
-}
-function setSettings(newSettings) {
-	settings = newSettings
+/**
+ * 下载指定的数据
+ * @param {BlobPart[]} dataList 数据
+ * @param {string} filename 文件名
+ */
+function downloadData(dataList, filename) {
+	let blobData = new Blob(dataList);
+	let anchor = $('<a></a>');
+	anchor.attr({
+		'href': window.URL.createObjectURL(blobData),
+		'download': filename
+	});
+	anchor[0].click();
 }
 
 class VideoDownloader {
 	constructor() {
-		this.videoTabMap = new Map();
+		this.videotabsMap = new Map();
 	}
 	/**
 	 * 请求二进制数据
@@ -67,21 +65,6 @@ class VideoDownloader {
 			callback(xhr.response);
 		};
 		xhr.send();
-	}
-	/**
-	 * 下载指定的数据
-	 * @param {BlobPart[]} binaryDataList 数据
-	 * @param {string} filename 文件名
-	 */
-	downloadBinary(binaryDataList, filename) {
-		let blobData = new Blob(binaryDataList);
-		let anchor = $('<a></a>');
-		anchor.attr({
-			'href': window.URL.createObjectURL(blobData),
-			'download': filename
-		});
-		console.log(anchor);
-		anchor[0].click();
 	}
 	/**
 	 * 获取m3u8 url
@@ -142,13 +125,13 @@ class VideoDownloader {
 			// request each piece and merge to one file and download
 			const dataList = [];
 			videoPieceList.forEach((pieceName, index) => {
-				requestBinary(getPieceUrl(fileUrl, pieceName), (binaryData) => {
+				this.requestBinary(this.getPieceUrl(fileUrl, pieceName), (binaryData) => {
 					dataList.push(binaryData);
 					if (onStep) {
 						onStep(pieceName, dataList.length, videoPieceList.length);
 					}
 					if (index === videoPieceList.length - 1) {
-						downloadBinary(dataList, filename);
+						downloadData(dataList, filename);
 						onFinish(true);
 					}
 				});
@@ -156,101 +139,176 @@ class VideoDownloader {
 		});
 	}
 	/**
-	 * 获取tab下检测到的视频url
-	 * @param {number} tabId tabId
+	 * 获取tabs下检测到的视频url
+	 * @param {number} tabsId tabsId
 	 * @returns 视频url列表
 	 */
-	getVideoList(tabId) {
-		if (!this.videoTabMap.has(tabId)) {
+	getVideoList(tabsId) {
+		if (!this.videotabsMap.has(tabsId)) {
 			return [];
 		}
-		return this.videoTabMap.get(tabId);
+		return this.videotabsMap.get(tabsId);
 	}
 	/**
 	 * 添加新url
-	 * @param {number} tabId tabId
+	 * @param {number} tabsId tabsId
 	 * @param {string} videoUrl video url
 	 */
-	addVideoItem(tabId, videoUrl) {
-		if (!this.videoTabMap.has(tabId)) {
-			this.videoTabMap.set(tabId, []);
+	addVideoItem(tabsId, videoUrl) {
+		if (!this.videotabsMap.has(tabsId)) {
+			this.videotabsMap.set(tabsId, []);
 		}
-		this.videoTabMap.get(tabId).push(videoUrl);
+		this.videotabsMap.get(tabsId).push(videoUrl);
+	}
+	/**
+	 * 清空url
+	 * @param {number} tabsId tabsId
+	 */
+	clearVideoItem(tabsId) {
+		if (this.videotabsMap.has(tabsId)) {
+			this.videotabsMap.delete(tabsId);
+		}
 	}
 }
 
 const videoDownloader = new VideoDownloader();
+let globalSettings = getDefaultSettings();
 
-chrome.webRequest.onCompleted.addListener((obj) => {
-	if (obj.url.includes("m3u8") && !obj.initiator.includes('chrome-extension')) {
-		console.log(obj);
-		videoDownloader.addVideoItem(obj.tabId, getM3U8Url(obj.url));
-	}
-}, { urls: ['<all_urls>'] });
-// 添加屏蔽词
-function addKey(key, isReg) {
-	if (key === '') {
-		return 1;
-	} else {
-		for (const item of blockList) {
-			if (item.text === key && item.isReg === isReg) {
-				return 2;
-			}
-		}
-	}
-	blockList.push({ text: key, isReg: isReg });
-	return 0;
+/**
+ * 获取tabs下检测到的视频url
+ * @param {number} tabsId tabsId
+ * @returns 视频url列表
+ */
+function getVideoList(tabsId) {
+	return videoDownloader.getVideoList(tabsId);
 }
-// 删除屏蔽词
-function removeKey(index) {
-	// let i = list.indexOf(key);
-	blockList.splice(index, 1);
-	return 0;
+/**
+ * 根据m3u8文件下载视频
+ * @param {string} fileUrl m3u8文件url
+ * @param {string} filename 保存文件名
+ * @param {(pieceName: string, index: number, length: number) => void} onStep 已下载第index，总length个分片后回调
+ * @param {(isSuccess: boolean) => void} onFinish 完成后回调
+ */
+function downloadVideoFromM3U8(fileUrl, filename, onStep, onFinish) {
+	return videoDownloader.downloadVideoFromM3U8(fileUrl, filename, onStep, onFinish);
 }
-// 保存屏蔽词列表及配置
-function save() {
-	chrome.storage.sync.set({ list: blockList, settings: settings }, function () {
-		console.log("a save ", blockList, settings);
+
+/**
+ * 获取设置
+ * @param {(result: object) => void} callback 回调
+ */
+function getSettings(callback) {
+	chrome.storage.sync.get(['settings'], result => {
+		globalSettings = result['settings'];
+		callback(result);
 	});
 }
-// 接受来自content的消息
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-	console.log('收到来自content的消息');
-	// 获取关键词列表和设置信息
-	if (request.type == 'get') {
-		sendResponse({ list: blockList, settings: settings });
-		console.log(blockList);
-	}
-});
-// 每次启动时加载屏蔽词列表及配置
-chrome.storage.sync.get(['list', 'settings'], function (data) {
-	settings = data['settings'] || settings
-	blockList = data['list'] || blockList
-	save()
-});
-function downloadText(content, filename) {
-  let a = document.createElement("a");
-  let data_blob = new Blob([content]);
-  a.href = window.URL.createObjectURL(data_blob);
-  a.download = filename;
+/**
+ * 保存设置
+ * @param {object} settings 设置
+ * @param {(result: object) => void} callback 回调
+ */
+function setSettings(settings, callback = () => { }) {
+	chrome.storage.sync.set({ settings }, result => {
+		callback(result);
+	});
+	globalSettings = settings;
+}
+/**
+ * 重置设置
+ */
+function resetSettings() {
+	setSettings(getDefaultSettings());
+}
 
-  let event = document.createEvent("MouseEvents");
-  event.initMouseEvent("click", true, true, document.defaultView, 0, 0, 0, 0, 0,
-    false, false, false, false, 0, null);
-  a.dispatchEvent(event);
+/**
+ * 导出列表数据
+ * @param {string[]} blockList 要导出的列表
+ */
+function exportList(blockList) {
+	downloadData([JSON.stringify(blockList)], "list.json");
 }
-function exportList() {
-  downloadText(JSON.stringify(blockList), "list.json");
-}
-function importList(file, callback) {
-  let reader = new FileReader();
+/**
+ * 导入列表数据
+ * @param {object} data 导入到的对象
+ * @param {File} file 文件对象
+ * @param {(isSuccess) => void} callback 回调
+ */
+function importList(data, file, callback) {
+	let reader = new FileReader();
   reader.readAsText(file, 'utf-8');
-
+	
 	reader.onload = function () {
-		blockList = JSON.parse(this.result)
-		save()
+		let blockList = JSON.parse(this.result);
+		if (!(blockList instanceof Array) || blockList.some(value => !(typeof value === 'string'))) {
+			callback(false);
+			return;
+		}
+		data.blockList = blockList;
 		if (callback) {
-			callback()
+			callback(true);
 		}
   };
 }
+
+/**
+ * 刷新bilibili首页板块列表
+ * @param {(isSuccess: boolean, message: string) => void} callback 回调，返回是否成功和失败消息
+ */
+function refreshBilibiliComponentList(callback = () => { }) {
+	let queryOptions = { active: true, currentWindow: true };
+	chrome.tabs.query(queryOptions, tabs => {
+		let tabsId = tabs[0].id;
+		if (!/www.bilibili.com(\/\?.*)?/.test(tabs[0].url)) {
+			callback(false, '请在bilibili首页进行操作');
+			return;
+		}
+		chrome.tabs.sendMessage(tabsId, { type: 'refresh' }, response => {
+			if (!response) {
+				callback(false, '请刷新网页后再操作');
+				return;
+			}
+			globalSettings.bilibili.component.componentList = response;
+			setSettings(globalSettings, () => { });
+			callback(true, '刷新成功');
+		});
+	});
+}
+
+/** --------------- 所有的 Chrome 事件监听 --------------- */
+
+chrome.webRequest.onCompleted.addListener((obj) => {
+	if (!globalSettings.videoDownloader.enable) {
+		return;
+	}
+	if (obj.url.includes("m3u8") && !obj.initiator.includes('chrome-extension')) {
+		videoDownloader.addVideoItem(obj.tabId, videoDownloader.getM3U8Url(obj.url));
+	}
+}, { urls: ['<all_urls>'] });
+
+chrome.tabs.onUpdated.addListener((tabsId, changeInfo, tabs) => {
+	if (changeInfo.status === 'loading') {
+		videoDownloader.clearVideoItem(tabsId);
+	}
+});
+
+chrome.runtime.onInstalled.addListener(details => {
+	getSettings(result => {
+		let { settings } = result;
+		if (!settings) {
+			resetSettings();
+		}
+	});
+});
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+	if (request.type === 'setting') {
+		sendResponse(globalSettings);
+	}
+});
+
+// FIXME Unchecked runtime.lastError: The message port closed before a response was received.
+// FIXME Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+// FIXME m3u8 视频url应该随tab关闭而清除、某些url卡住、下载视频同时发起的ajax太多
+// TODO popup.html界面优化
+// TODO 统一通信格式

@@ -10,8 +10,27 @@
 
 <body>
   <section class="main-content">
-    <ul id="video-list" class="list-group" >
-    </ul>
+    <h3>
+      <span>浏览助手</span>
+      <button type="button" class="btn btn-primary" id="settings-btn">设置</button>
+    </h3>
+    <h4>bilibili屏蔽</h4>
+    <div class="container-fluid">
+      <div style="display: flex;justify-content: space-around;">
+        <div>
+          <p style="text-align: center;">屏蔽评论数</p>
+          <p style="text-align: center;" id="main-num">0</p>
+        </div>
+        <div>
+          <p style="text-align: center;">屏蔽子评论数</p>
+          <p style="text-align: center;" id="sub-num">0</p>
+        </div>
+      </div>
+    </div>
+    <button type="button" class="btn btn-primary btn-block" id="update-bilibili-comp-btn">更新Bilibili首页模块</button>
+    <h4>m3u8视频列表</h4>
+    <div id="video-list-wrapper">
+    </div>
   </section>
   <script src="./libs/jquery.min.js"></script>
   <script src="./libs/bootstrap.min.js"></script>

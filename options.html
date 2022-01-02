@@ -5,7 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>配置页</title>
-  <link href="./libs/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="./libs/bootstrap.min.css">
+  <link rel="stylesheet" href="./libs/bootstrap-switch.min.css">
   <link rel="stylesheet" href="options.css">
 </head>
 
@@ -13,73 +14,106 @@
   <nav class="navbar navbar-inverse navbar-fixed-top">
     <div class="container-fluid">
       <div class="navbar-header">
-        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar"
-          aria-expanded="false" aria-controls="navbar">
-          <span class="sr-only">Toggle navigation</span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-        </button>
-        <a class="navbar-brand" href="#">Bilibili 屏蔽器</a>
+        <a class="navbar-brand" href="#">浏览助手</a>
       </div>
+      <div class="navbar-right" style="height: 100%;">
+        <button type="button" class="btn btn-danger" id="reset-btn">重置</button>
+      </div>
+      
     </div>
   </nav>
   <div class="container-fluid">
     <div class="row">
       <div class="col-md-2 sidebar">
-        <ul class="nav nav-sidebar">
-          <li class="active"><a id="blocks-btn">板块屏蔽</a></li>
-          <li><a id="commits-btn">评论屏蔽</a></li>
+        <ul class="nav nav-pills nav-stacked" role="tablist">
+          <li role="presentation" class="active"><a href="#csdn" aria-controls="csdn" role="tab" data-toggle="tab">CSDN</a></li>
+          <li role="presentation"><a href="#baidu" aria-controls="baidu" role="tab" data-toggle="tab">Baidu</a></li>
+          <li role="presentation"><a href="#bilibili" aria-controls="bilibili" role="tab" data-toggle="tab">Bilibili</a></li>
+          <li role="presentation"><a href="#other" aria-controls="other" role="tab" data-toggle="tab">视频下载</a></li>
         </ul>
       </div>
-      <div id="blocks" class="col-md-10 col-md-offset-2 main">
-        <h1 class="page-header">板块屏蔽</h1>
-        <h2 class="sub-header">主页板块</h2>
-        <p class="help-block">选择需要保留在主页上的板块</p>
-        <form id="modules" class="form-inline">
-        </form>
-      </div>
-      <div id="commits" class="col-md-10 col-md-offset-2 main" style="display: none;">
-        <h1 class="page-header">评论屏蔽</h1>
-        <h2 class="sub-header">屏蔽范围</h2>
-        <p class="help-block">选择对哪些位置的评论进行屏蔽</p>
-        <form class="form">
-          <div id="types" class="form-group">
+      <div class="tab-content col-md-10 col-md-offset-2 main">
+        <div role="tabpanel" class="tab-pane active" id="csdn">
+          <input type="checkbox" name="switch" class="switch-for-enable" data-bind="csdn.enable" checked>
+        </div>
+        <div role="tabpanel" class="tab-pane" id="baidu">
+          <input type="checkbox" name="switch" class="switch-for-enable" data-bind="baidu.enable" checked>
+          <h2 class="func">
+            <span class="name">百家号评论屏蔽</span>
+          </h2>
+          <h3>屏蔽词列表</h3>
+
+          <div class="block-list-component" data-bind="baidu">
+            <form class="form-inline">
+              <input type="text" class="form-control add-input" placeholder="请输入屏蔽词">
+              <button type="button" class="btn btn-default add-btn">添加</button>
+              <button type="button" class="btn btn-default del-btn">删除</button>
+              <input type="file" class="btn choose-btn" style="display: inline-block;">
+              <button type="button" class="btn btn-default import-btn">导入</button>
+              <button type="button" class="btn btn-default export-btn">导出</button>
+            </form>
+            <div class="list-group block-list">
+            </div>
           </div>
-          <div id="pages" class="form-group">
+        </div>
+        <div role="tabpanel" class="tab-pane" id="bilibili">
+          <input type="checkbox" name="switch" data-bind="bilibili.enable" class="switch-for-enable" checked>
+          <h2 class="func">
+            <span class="name">首页板块屏蔽</span>
+            <input type="checkbox" name="switch" class="switch-for-enable" data-bind="bilibili.component.enable" checked>
+          </h2>
+          <h3>板块列表</h3>
+          <div class="row" id="component-list">
           </div>
-        </form>
-        <h2 class="sub-header">屏蔽列表</h2>
-        <p class="help-block">插件将按照以下关键词进行屏蔽</p>
-        <form class="form-inline">
-          <div class="form-group">
-            <label for="key-word">关键词</label>
-            <input type="text" class="form-control" id="key-word" placeholder="需要屏蔽的词">
+          
+          <h2 class="func">
+            <span class="name">评论屏蔽</span>
+            <input type="checkbox" name="switch" class="switch-for-enable" data-bind="bilibili.comment.enable" checked>
+          </h2>
+          <h3>屏蔽词列表</h3>
+
+          <div class="block-list-component" data-bind="bilibili.comment">
+            <form class="form-inline">
+              <input type="text" class="form-control add-input" placeholder="请输入屏蔽词">
+              <button type="button" class="btn btn-default add-btn">添加</button>
+              <button type="button" class="btn btn-default del-btn">删除</button>
+              <input type="file" class="btn choose-btn" style="display: inline-block;">
+              <button type="button" class="btn btn-default import-btn">导入</button>
+              <button type="button" class="btn btn-default export-btn">导出</button>
+            </form>
+            <div class="list-group block-list">
+            </div>
           </div>
-          <div class="checkbox">
-            <label>
-              <input id="reg-checkbox" type="checkbox"> 正则表达式 </label>
+
+          <h2 class="func">
+            <span class="name">首页直播屏蔽</span>
+            <input type="checkbox" name="switch" class="switch-for-enable" data-bind="bilibili.live.enable" checked>
+          </h2>
+          <h3>屏蔽词列表</h3>
+          
+          <div class="block-list-component" data-bind="bilibili.live">
+            <form class="form-inline">
+              <input type="text" class="form-control add-input" placeholder="请输入屏蔽词">
+              <button type="button" class="btn btn-default add-btn">添加</button>
+              <button type="button" class="btn btn-default del-btn">删除</button>
+              <input type="file" class="btn choose-btn" style="display: inline-block;">
+              <button type="button" class="btn btn-default import-btn">导入</button>
+              <button type="button" class="btn btn-default export-btn">导出</button>
+            </form>
+            <div class="list-group block-list">
+            </div>
           </div>
-          <button id="add-btn" type="button" class="btn btn-default">添加</button>
-          <button id="clear-btn" type="button" class="btn btn-default">清空</button>
-        </form>
-        <form class="form-inline">
-          <div class="form-group">
-            <label for="upload-btn">导入列表</label>
-            <input type="file" id="upload-btn">
-          </div>
-          <button id="import-btn" type="button" class="btn btn-default">导入</button>
-          <button id="export-btn" type="button" class="btn btn-default">导出</button>
-        </form>
-        <div class="table-responsive table-border">
-          <table class="table table-striped" id="block-list">
-          </table>
+
+        </div>
+        <div role="tabpanel" class="tab-pane" id="other">
+          <input type="checkbox" name="switch" class="switch-for-enable" data-bind="videoDownloader.enable" checked>
         </div>
       </div>
     </div>
   </div>
   <script src="./libs/jquery.min.js"></script>
   <script src="./libs/bootstrap.min.js"></script>
+  <script src="./libs/bootstrap-switch.min.js"></script>
   <script src="./options.js"></script>
 </body>
 
