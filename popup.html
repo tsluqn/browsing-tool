@@ -12,7 +12,7 @@
   <section class="main-content">
     <h3>
       <span>浏览助手</span>
-      <button type="button" class="btn btn-primary" id="settings-btn">设置</button>
+      <button type="button" class="btn btn-primary" id="setting-btn">设置</button>
     </h3>
     <h4>bilibili屏蔽</h4>
     <div class="container-fluid">
@@ -27,9 +27,36 @@
         </div>
       </div>
     </div>
-    <button type="button" class="btn btn-primary btn-block" id="update-bilibili-comp-btn">更新Bilibili首页模块</button>
     <h4>m3u8视频列表</h4>
     <div id="video-list-wrapper">
+    </div>
+    <h4>Melvor Idle</h4>
+    <div>
+      <!-- <select id="melvor-module-selector">
+        <option value=""></option>
+        <option value="farming">伐木</option>
+        <option value="strength">力量</option>
+        <option value="defense">防御</option>
+        <option value="mining">采矿</option>
+        <option value="farming">伐木</option>
+      </select>-->
+      <!-- <button type="button" class="btn btn-primary" id="melvor-add-btn">设置</button>
+      <button type="button" class="btn btn-primary" id="melvor-speed-btn">10倍变速</button>  -->
+      <div class="pt-2">
+        <div>攻击加成</div>
+        <div>{game.combat.player.baseSpawnInterval = 300;let stat = game.combat.player.equipment.slots.Weapon.item.equipmentStats;stat[0].value = 360;for(let i=1;i < stat.length;i++){stat[i].value = 4000}game.combat.player.computeEquipmentStats()}</div>
+        <div>挖矿加成</div>
+        <div>game.mining.baseInterval = 300;</div>
+        <!-- <div>烹饪加成</div>
+        <div></div>
+        <div>钓鱼加成</div>
+        <div></div>
+        <div>锻造加成</div>
+        <div></div> -->
+        <!-- <div>仓库加成</div>
+        <div>game.bank.addQuantityToExistingItems(10000);</div> -->
+        
+      </div>
     </div>
   </section>
   <script src="./libs/jquery.min.js"></script>

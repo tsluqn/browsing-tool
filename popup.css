@@ -1,5 +1,5 @@
 body{
-  width: 300px;
+  width: 360px;
 }
 .main-content {
   padding: 6px 10px;
@@ -10,12 +10,18 @@ body{
   align-items: center;
 }
 .video-item-text {
-  width: 80%;
+  width: 70%;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
   margin-bottom: 0;
 }
+.video-item-size {
+  margin-bottom: 0;
+}
 .download-progress {
   display: none;
+}
+.melvor-helper-commands {
+  font-size: 15px;
 }

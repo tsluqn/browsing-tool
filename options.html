@@ -6,38 +6,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>配置页</title>
   <link rel="stylesheet" href="./libs/bootstrap.min.css">
-  <link rel="stylesheet" href="./libs/bootstrap-switch.min.css">
   <link rel="stylesheet" href="options.css">
 </head>
 
 <body>
-  <nav class="navbar navbar-inverse navbar-fixed-top">
+  <nav class="navbar bg-body-tertiary">
     <div class="container-fluid">
-      <div class="navbar-header">
-        <a class="navbar-brand" href="#">浏览助手</a>
-      </div>
-      <div class="navbar-right" style="height: 100%;">
-        <button type="button" class="btn btn-danger" id="reset-btn">重置</button>
-      </div>
-      
+      <span class="navbar-brand mb-0 h1">浏览助手</span>
+      <button type="button" class="btn btn-danger" id="reset-btn">重置</button>
     </div>
   </nav>
-  <div class="container-fluid">
+  <div class="container-fluid pt-2">
     <div class="row">
-      <div class="col-md-2 sidebar">
-        <ul class="nav nav-pills nav-stacked" role="tablist">
-          <li role="presentation" class="active"><a href="#csdn" aria-controls="csdn" role="tab" data-toggle="tab">CSDN</a></li>
-          <li role="presentation"><a href="#baidu" aria-controls="baidu" role="tab" data-toggle="tab">Baidu</a></li>
-          <li role="presentation"><a href="#bilibili" aria-controls="bilibili" role="tab" data-toggle="tab">Bilibili</a></li>
-          <li role="presentation"><a href="#other" aria-controls="other" role="tab" data-toggle="tab">视频下载</a></li>
+      <div class="col-md-2">
+        <ul class="nav flex-column nav-pills" id="myTab" role="tablist" aria-orientation="vertical">
+          <button class="nav-link active" id="v-pills-csdn-tab" data-bs-toggle="pill" data-bs-target="#v-pills-csdn" type="button" role="tab" aria-controls="v-pills-csdn" aria-selected="true">CSDN</button>
+          <button class="nav-link" id="v-pills-baidu-tab" data-bs-toggle="pill" data-bs-target="#v-pills-baidu" type="button" role="tab" aria-controls="v-pills-baidu" aria-selected="false">Baidu</button>
+          <button class="nav-link" id="v-pills-bilibili-tab" data-bs-toggle="pill" data-bs-target="#v-pills-bilibili" type="button" role="tab" aria-controls="v-pills-bilibili" aria-selected="false">Bilibili</button>
+          <button class="nav-link" id="v-pills-pixiv-tab" data-bs-toggle="pill" data-bs-target="#v-pills-pixiv" type="button" role="tab" aria-controls="v-pills-pixiv" aria-selected="false">Pixiv</button>
+          <button class="nav-link" id="v-pills-video-tab" data-bs-toggle="pill" data-bs-target="#v-pills-video" type="button" role="tab" aria-controls="v-pills-video" aria-selected="false">视频下载</button>
+          <button class="nav-link" id="v-pills-jb51code-tab" data-bs-toggle="pill" data-bs-target="#v-pills-jb51code" type="button" role="tab" aria-controls="v-pills-jb51code" aria-selected="false">脚本之家</button>
+          <button class="nav-link" id="v-pills-zhihu-tab" data-bs-toggle="pill" data-bs-target="#v-pills-zhihu" type="button" role="tab" aria-controls="v-pills-zhihu" aria-selected="false">知乎</button>
         </ul>
       </div>
-      <div class="tab-content col-md-10 col-md-offset-2 main">
-        <div role="tabpanel" class="tab-pane active" id="csdn">
-          <input type="checkbox" name="switch" class="switch-for-enable" data-bind="csdn.enable" checked>
+      <div class="tab-content col-md-10 col-md-offset-2 main" id="v-pills-tabContent">
+        <div class="tab-pane fade show active" id="v-pills-csdn" role="tabpanel" aria-labelledby="v-pills-csdn-tab" tabindex="0">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" data-bind="csdn.enable" id="csdn-enable" checked>
+            <label class="form-check-label" for="csdn-enable"></label>
+          </div>
         </div>
-        <div role="tabpanel" class="tab-pane" id="baidu">
-          <input type="checkbox" name="switch" class="switch-for-enable" data-bind="baidu.enable" checked>
+        <div class="tab-pane fade show" id="v-pills-baidu" role="tabpanel" aria-labelledby="v-pills-baidu-tab" tabindex="0">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" data-bind="baidu.enable" id="baidu-enable" checked>
+            <label class="form-check-label" for="baidu-enable"></label>
+          </div>
           <h2 class="func">
             <span class="name">百家号评论屏蔽</span>
           </h2>
@@ -56,19 +59,32 @@
             </div>
           </div>
         </div>
-        <div role="tabpanel" class="tab-pane" id="bilibili">
-          <input type="checkbox" name="switch" data-bind="bilibili.enable" class="switch-for-enable" checked>
+        <div class="tab-pane fade show" id="v-pills-bilibili" role="tabpanel" aria-labelledby="v-pills-bilibili-tab" tabindex="0">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" data-bind="bilibili.enable" id="bilibili-enable" checked>
+            <label class="form-check-label" for="bilibili-enable"></label>
+          </div>
           <h2 class="func">
-            <span class="name">首页板块屏蔽</span>
-            <input type="checkbox" name="switch" class="switch-for-enable" data-bind="bilibili.component.enable" checked>
+            <span class="name">首页推荐过滤</span>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" role="switch" data-bind="bilibili.recommend.enable" id="bilibili-recommend-enable" checked>
+              <label class="form-check-label" for="bilibili-recommend-enable"></label>
+            </div>
           </h2>
-          <h3>板块列表</h3>
+
+          <div>
+            <input type="number" class="form-control add-input" placeholder="播放量阈值" data-bind="bilibili.recommend.viewThresh" id="recommend-thresh">
+          </div>
           <div class="row" id="component-list">
+            
           </div>
           
           <h2 class="func">
             <span class="name">评论屏蔽</span>
-            <input type="checkbox" name="switch" class="switch-for-enable" data-bind="bilibili.comment.enable" checked>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" role="switch" data-bind="bilibili.comment.enable" id="bilibili-comment-enable" checked>
+              <label class="form-check-label" for="bilibili-comment-enable"></label>
+            </div>
           </h2>
           <h3>屏蔽词列表</h3>
 
@@ -84,36 +100,47 @@
             <div class="list-group block-list">
             </div>
           </div>
-
-          <h2 class="func">
-            <span class="name">首页直播屏蔽</span>
-            <input type="checkbox" name="switch" class="switch-for-enable" data-bind="bilibili.live.enable" checked>
-          </h2>
-          <h3>屏蔽词列表</h3>
-          
-          <div class="block-list-component" data-bind="bilibili.live">
-            <form class="form-inline">
-              <input type="text" class="form-control add-input" placeholder="请输入屏蔽词">
-              <button type="button" class="btn btn-default add-btn">添加</button>
-              <button type="button" class="btn btn-default del-btn">删除</button>
-              <input type="file" class="btn choose-btn" style="display: inline-block;">
-              <button type="button" class="btn btn-default import-btn">导入</button>
-              <button type="button" class="btn btn-default export-btn">导出</button>
-            </form>
-            <div class="list-group block-list">
-            </div>
-          </div>
-
         </div>
-        <div role="tabpanel" class="tab-pane" id="other">
-          <input type="checkbox" name="switch" class="switch-for-enable" data-bind="videoDownloader.enable" checked>
+        <div class="tab-pane fade show" id="v-pills-pixiv" role="tabpanel" aria-labelledby="v-pills-pixiv-tab" tabindex="0">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" data-bind="pixiv.enable" id="pixiv-enable" checked>
+            <label class="form-check-label" for="pixiv-enable"></label>
+          </div>
+          <h2 class="func">
+            <span class="name">高级搜索</span>
+          </h2>
+          <h3>高级搜索后缀</h3>
+
+          <div class="query-str-component" data-bind="pixiv">
+            <form class="form-inline">
+              <input type="text" class="form-control query-str-input" placeholder="请输入高级搜索后缀">
+              <button type="button" class="btn btn-default ok-btn">确定</button>
+            </form>
+          </div>
+        </div>
+        <div class="tab-pane fade show" id="v-pills-video" role="tabpanel" aria-labelledby="v-pills-video-tab" tabindex="0">
+          <!-- <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" data-bind="video.enable" id="video-enable" checked>
+            <label class="form-check-label" for="video-enable"></label>
+          </div> -->
+        </div>
+        <div class="tab-pane fade show" id="v-pills-jb51code" role="tabpanel" aria-labelledby="v-pills-jb51code-tab" tabindex="0">
+          <!-- <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" data-bind="jb51code.enable" id="jb51code-enable" checked>
+            <label class="form-check-label" for="jb51code-enable"></label>
+          </div> -->
+        </div>
+        <div class="tab-pane fade show" id="v-pills-zhihu" role="tabpanel" aria-labelledby="v-pills-zhihu-tab" tabindex="0">
+          <!-- <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" data-bind="zhihu.enable" id="zhihu-enable" checked>
+            <label class="form-check-label" for="zhihu-enable"></label>
+          </div> -->
         </div>
       </div>
     </div>
   </div>
   <script src="./libs/jquery.min.js"></script>
   <script src="./libs/bootstrap.min.js"></script>
-  <script src="./libs/bootstrap-switch.min.js"></script>
   <script src="./options.js"></script>
 </body>
 

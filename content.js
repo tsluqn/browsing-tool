@@ -14,34 +14,7 @@ function checkBlocks(text, blockList) {
   return null;
 }
 
-let globalSettings = {
-  csdn: {
-    enable: true
-  },
-  baidu: {
-    enable: true,
-    blockList: []
-  },
-  bilibili: {
-    enable: true,
-    comment: {
-      enable: true,
-      blockList: []
-    },
-    live: {
-      enable: true,
-      blockList: []
-    },
-    component: {
-      enable: true,
-      componentList: [],
-      blockList: []
-    },
-  },
-  videoDownloader: {
-    enable: true
-  }
-};
+let globalSetting = {};
 
 class CSDNHandler {
   /**
@@ -52,16 +25,35 @@ class CSDNHandler {
     if (/blog.csdn.net\/.+/.test(url)) {
       this.showHiddenContent();
     }
+    this.enableCopy()
   }
   /**
-   * 显示需要关注后查看的内容
+   * 取消CSDN复制必须登录
+   */
+  enableCopy() {
+    $('#content_views pre, #content_views pre code, #content_views')
+      .css({
+        'user-select': 'auto',
+        '-webkit-user-select': 'auto'
+      })
+  }
+  /**
+   * 显示隐藏的内容
    */
   showHiddenContent() {
+    // 关注后查看
     $('#article_content').css({
-      'overflow': '',
-      'height': ''
+      'overflow': 'unset',
+      'height': 'unset'
     });
     $('.hide-article-box.hide-article-pos.text-center').hide();
+
+    // 长文展开
+    $('.hide-preCode-box').hide();
+    $('.set-code-hide').css({
+      'overflow-y': 'unset',
+      'height': 'unset'
+    })
   }
 }
 
@@ -80,14 +72,7 @@ class BaiduHandler {
    */
   hiddenComment() {
     const root = $('#commentModule');
-    const observer = new MutationObserver((mutations) => {
-      $('.xcp-list-list > div').each(function () {
-        if (checkBlocks($(this).text(), globalSettings.baidu.blockList)) {
-          $(this).hide();
-        }
-      });
-    });
-    observer.observe(root[0], { subtree: true, childList: true });
+    root.hide();
   }
 }
 
@@ -104,19 +89,92 @@ class BilibiliHandler {
    * @param {string} url url
    */
   handle(url) {
-    if (/bilibili.com\/.+/.test(url)) {
-      if (globalSettings.bilibili.comment.enable) {
-        this.hiddenComment();
+    try {
+      if (/www.bilibili.com.*/.test(url)) {
+        this.removeRefresh();
+        this.disableGray();
+        this.removeTrend();
+        this.hiddenRecommend();
       }
+      else if (/bilibili.com\/.+/.test(url)) {
+        this.removeTrend();
+        this.disableGray();
+        this.hiddenTopic();
+        if (globalSetting.bilibili.comment.enable) {
+          this.hiddenComment();
+        }
+      }
+    } catch(e) {
+      console.error(e)
     }
-    if (/www.bilibili.com(\/\?)?/.test(url)) {
-      if (globalSettings.bilibili.component.enable) {
-        this.hiddenComponent();
+  }
+  /**
+   * 移除动态页右侧的话题面板
+   */
+  hiddenTopic() {
+    setTimeout(() => {
+      $('.topic-panel').remove();
+    }, 1000);
+  }
+  /**
+   * 屏蔽小于播放量阈值的首页视频推荐
+   */
+  hiddenRecommend() {
+    const recommendList = $('.bili-video-card.is-rcmd');
+    if (globalSetting.bilibili.recommend.enable) {
+      let count = 0;
+      for (const recommend of recommendList) {
+        const videoViewText = $('.bili-video-card__stats--item .bili-video-card__stats--text', $(recommend))[0]
+        const videoViewStr = $(videoViewText).text();
+        if (this.checkVideoView(videoViewStr, globalSetting.bilibili.recommend.viewThresh)) {
+          $(recommend).hide();
+          count++;
+        }
       }
-      if (globalSettings.bilibili.live.enable) {
-        this.hiddenLive();
-      }
+      console.log('[hidden recommend] hidden ' + count + ' videos, thresh=' + globalSetting.bilibili.recommend.viewThresh)
     }
+  }
+  /**
+   * 检查视频播放量是否小于阈值
+   */
+  checkVideoView(view, thresh) {
+    let index = 1;
+    let num = 0;
+    if (view.endsWith('万')) {
+      index = 10000
+    }
+    num = parseInt(view) * index;
+    return num < thresh;
+  }
+  /**
+   * 移除首页推荐的刷新按钮
+   */
+  removeRefresh() {
+    setTimeout(() => {
+      $('.feed-roll-btn').remove()
+    }, 1000);
+  }
+  /**
+   * 移除搜索栏的Bilibili热搜
+   */
+  removeTrend() {
+    setTimeout(() => {
+      const app = $('.search-panel')[0];
+      const observer = new MutationObserver((mutations) => {
+        $('.trending').remove();
+      });
+      observer.observe(app, { subtree: true, childList: true });
+      setTimeout(() => {
+        $('.nav-search-input').attr('placeholder', '');
+        $('.nav-search-input').attr('title', '');
+      }, 500);
+    }, 500)
+  }
+  /**
+   * Remove gray background
+   */
+  disableGray() {
+    document.getElementsByTagName('html')[0].classList = [];
   }
   /**
    * 屏蔽评论
@@ -137,14 +195,14 @@ class BilibiliHandler {
     comments.each(function () {
       // 主评论
       let text = $('.text', $(this)).text();
-      if (checkBlocks(text, globalSettings.bilibili.comment.blockList)) {
+      if (checkBlocks(text, globalSetting.bilibili.comment.blockList)) {
         $(this).remove();
         self.commentBlockResult.main++;
       } else {
         $('.reply-item', $(this)).each(function () {
           // 子评论
           let text = $(this).text();
-          if (checkBlocks(text, globalSettings.bilibili.comment.blockList)) {
+          if (checkBlocks(text, globalSetting.bilibili.comment.blockList)) {
             $(this).remove();
             self.commentBlockResult.sub++;
           }
@@ -152,67 +210,6 @@ class BilibiliHandler {
       }
     });
   }
-  /**
-   * 屏蔽首页直播box
-   */
-  hiddenLive() {
-    // FIXME 点击直播box刷新按钮，有概率不加载任何box，也不触发MutationObserver监听
-    // 未加载完成，延时
-    setTimeout(() => {
-      let root = $('#bili_live');
-      if (root.length === 0) {
-        console.log('[Browsing-Helper][bilibili-live]: get bili_live component failed');
-        return;
-      }
-      this.hiddenLiveItem(root);
-      let observer = new MutationObserver(() => {
-        this.hiddenLiveItem(root);
-      })
-      observer.observe(root[0], { childList: true, subtree: true });
-    }, 1000);
-  }
-  /**
-   * 屏蔽节点下的直播box
-   * @param {jQuery} root jQuery节点
-   */
-  hiddenLiveItem(root) {
-    // DOM变动时未加载完成，延时
-    setTimeout(() => {
-      $('.live-card', root).each(function () {
-        const text = $('.up > .txt', $(this)).text();
-        const target = checkBlocks(text, globalSettings.bilibili.live.blockList);
-        if (target) {
-          console.log(`[Browsing-Helper][bilibili-live]: check "${target}" from "${text}"`);
-          $(this).hide();
-          $(this).remove();
-        }
-      });
-    }, 1000);
-  }
-  /**
-   * 屏蔽首页板块
-   */
-  hiddenComponent() {
-    setTimeout(() => {
-      let ids = globalSettings.bilibili.component.blockList;
-      for (const id of ids) {
-        $(`#${id}`).hide();
-      }
-    }, 1000);
-  }
-}
-/**
- * 更新首页板块列表
- * @returns 当前板块列表
- */
-function refreshComponentList() {
-  let components = [];
-  $('.storey-box .proxy-box > div').each(function () {
-    const id = $(this).attr('id');
-    const title = $('.storey-title .name', $(this)).text();
-    components.push({ id, title });
-  });
-  return components;
 }
 
 const handler = {
@@ -220,30 +217,76 @@ const handler = {
   csdnHandler: null,
   baiduHandler: null
 };
-
-$(document).ready(() => {
+const url = document.URL;
+const init = async () => {
   const url = document.URL;
+  const title = document.title
 
-  chrome.runtime.sendMessage({ type: 'setting' }, response => {
-    globalSettings = response;
-    if (/bilibili.com/.test(url) && globalSettings.bilibili.enable) {
+  try {
+    globalSetting = await chrome.runtime.sendMessage({ type: 'setting' })
+    console.log(globalSetting)
+  
+    if (/jb51.net/.test(url)) {
+      $('.jb51code').css({
+        'user-select': 'auto',
+        '-webkit-user-select': 'auto'
+      })
+      console.log($._data($('.jb51code')[0], 'events'))
+      // $._data($('.jb51code')[0], 'events').copy[0].handler = () => {}
+    } else if (/bilibili.com/.test(url) && globalSetting.bilibili.enable) {
+      document.getElementsByTagName('html')[0].classList = [];
       handler.bilibiliHandler = new BilibiliHandler();
       handler.bilibiliHandler.handle(url);
-    } else if (/csdn.net/.test(url) && globalSettings.csdn.enable) {
+      setTimeout(() => {
+        console.log($('.bili-dyn-item .bili-dyn-item__more .bili-popover'))
+      $('.bili-dyn-item .bili-dyn-item__more .bili-popover').show()
+      }, 3000)
+    } else if (/csdn.net/.test(url) && globalSetting.csdn.enable) {
       handler.csdnHandler = new CSDNHandler();
       handler.csdnHandler.handle(url);
-    } else if (/baidu.com/.test(url) && globalSettings.baidu.enable) {
+    } else if (/baidu.com/.test(url) && globalSetting.baidu.enable) {
+      document.body.classList.remove('big-event-gray');
       handler.baiduHandler = new BaiduHandler();
       handler.baiduHandler.handle(url);
-    } else {
+    } else if(/zhihu.com/.test(url)) {
+      $('.AppHeader-messages').remove();
+      setTimeout(() => {
+        
+        if(/\(.*\) /.test(title)) {
+          console.log(title)
+          document.title = title.replace(/\(.*\) /, '')
+        }
+      }, 2000);
     }
-  })
-});
+  } catch(e) {
+    console.error(e)
+  }
+}
+
+init()
+
+function hackMelvorIdle(module, action, value) {
+  console.log(game)
+  if(action === 'speed') {
+    if(module !== 'mining' || module !== 'smithing') return
+    game[module].baseInterval = game[module].baseInterval / 10
+    if(module === 'mining') {
+      game.mining.passiveRegenInterval = 250
+    }
+  }
+}
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type === 'refresh') {
-		sendResponse(refreshComponentList());
-  } else if (request.type === 'result') {
-    sendResponse(handler.bilibiliHandler.commentBlockResult);
+  switch(request.type) {
+    case 'result':
+      sendResponse(handler.bilibiliHandler.commentBlockResult);
+      break
+    case 'melvor':
+      const { module, action, value } = request.melvor
+      hackMelvorIdle(module, action, value)
+      break
+    default:
+      console.warn('unknown message type')
+      break
   }
 });

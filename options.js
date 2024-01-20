@@ -1,37 +1,3 @@
-let bg = chrome.extension.getBackgroundPage();
-/**
- * 加载bilibili首页模块列表
- * @param {object} settings 设置
- */
-function loadBilibiliComponentList(settings) {
-  let [componentList, blockList] = [settings.bilibili.component.componentList, settings.bilibili.component.blockList];
-  let root = $('#component-list');
-  let listHtml = '';
-  for (const item of componentList) {
-    const available = !blockList.includes(item.id);
-    listHtml += `<div class="col-md-2">
-                    <label class="checkbox-inline">
-                      <input type="checkbox" class="component-item" value="${item.id}" ${available ? 'checked' : ''}> ${item.title}
-                    </label>
-                  </div>`;
-  }
-  root.html(listHtml);
-  $('.component-item', root).on('click', e => {
-    const target = $(e.target);
-    const id = target.val();
-    const checked = target[0].checked;
-    if (!checked) {
-      if (!blockList.includes(id)) {
-        blockList.push(id);
-      }
-    } else {
-      if (blockList.includes(id)) {
-        blockList.splice(blockList.indexOf(id), 1);
-      }
-    }
-    bg.setSettings(settings);
-  });
-}
 /**
  * 加载屏蔽词列表
  * @param {jQuery} root jQuery节点
@@ -48,11 +14,11 @@ function loadBlockList(root, blockList) {
 /**
  * 处理屏蔽词列表组件的逻辑
  * @param {jQuery} root jQuery节点
- * @param {object} settings 设置
+ * @param {object} setting 设置
  */
-function handleBlockListComponent(root, settings) {
+function handleBlockListComponent(root, setting) {
   const dataBindLabel = root.attr('data-bind');
-  let [object, field] = getFieldFromObject(settings, dataBindLabel);
+  let [object, field] = getFieldFromObject(setting, dataBindLabel);
   let data = object[field];
   let currentIndex = undefined;
 
@@ -73,17 +39,17 @@ function handleBlockListComponent(root, settings) {
       return;
     }
     data.blockList.push(text);
-    bg.setSettings(settings, () => {
+    chrome.runtime.sendMessage({ type: 'set-setting', setting }).then(res => {
       loadBlockList($('.block-list', root), data.blockList);
       $('.add-input', root).val('');
-    });
+    })
   });
 
   $('.del-btn', root).on('click', e => {
     if (currentIndex) {
       data.blockList.splice(currentIndex, 1);
       currentIndex = undefined;
-      bg.setSettings(settings, () => {
+      chrome.runtime.sendMessage({ type: 'set-setting', setting }).then(res => {
         loadBlockList($('.block-list', root), data.blockList);
       })
     }
@@ -98,7 +64,7 @@ function handleBlockListComponent(root, settings) {
           return;
         }
         loadBlockList($('.block-list', root), data.blockList);
-        bg.setSettings(settings);
+        bg.setSetting(setting);
         alert('导入成功');
       })
     } else {
@@ -109,6 +75,20 @@ function handleBlockListComponent(root, settings) {
   $('.export-btn', root).on('click', e => {
     bg.exportList(data.blockList);
   });
+}
+/**
+ * 处理Bilibili首页推荐播放量阈值
+ * @param {jQuery} root 
+ * @param {Object} setting 
+ */
+function handleRecommendVideoViewThresh(root, setting) {
+  const dataBindLabel = $('#recommend-thresh').attr('data-bind');
+  let [object, field] = getFieldFromObject(setting, dataBindLabel);
+  $('#recommend-thresh').val(object[field]);
+  $('#recommend-thresh').change(function() {
+    object[field] = $('#recommend-thresh').val();
+    bg.setSetting(setting);
+  })
 }
 /**
  * 返回给定对象中指定数据的访问（被访问对象，被访问字段）
@@ -130,32 +110,32 @@ function getFieldFromObject(object, fieldStr) {
 }
 
 $(document).ready(() => {
-  bg.getSettings(result => {
-    const { settings } = result;
-    loadBilibiliComponentList(settings);
-
+  chrome.runtime.sendMessage({ type: 'setting' }).then(setting => {
     $('.block-list-component').each(function () {
-      handleBlockListComponent($(this), settings);
+      handleBlockListComponent($(this), setting);
     });
 
-    $('.switch-for-enable').each(function () {
-      const dataBindLabel = $(this).attr('data-bind');
-      let [object, field] = getFieldFromObject(settings, dataBindLabel);
+    handleRecommendVideoViewThresh(null, setting)
 
-      $(this).bootstrapSwitch({
-        state: object[field],
-        onSwitchChange(event, state) {
-          object[field] = state;
-          bg.setSettings(settings);
-        }
-      });
+    $('.form-switch > .form-check-input').each(function () {
+      const dataBindLabel = $(this).attr('data-bind');
+      let [object, field] = getFieldFromObject(setting, dataBindLabel);
+      $(this).attr('checked', object[field])
+
+      $(this).click(() => {
+        console.log(setting)
+        console.log(object, field)
+        object[field] = $(this).is(':checked')
+        console.log(setting)
+        chrome.runtime.sendMessage({ type: 'set-setting', setting })
+      })
     });
   });
 
   $('#reset-btn').on('click', e => {
     const res = window.confirm('是否重置设置项？');
     if (res) {
-      bg.resetSettings();
+      bg.resetSetting();
       window.alert('重置成功');
       location.reload();
     }

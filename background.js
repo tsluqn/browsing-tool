@@ -1,9 +1,9 @@
 /**
- * 获取默认配置
- * @returns 默认空配置
+ * 获取默认设置
+ * @returns
  */
-function getDefaultSettings() {
-	let settings = {
+function getDefaultSetting() {
+	let setting = {
 		csdn: {
 			enable: true
 		},
@@ -17,54 +17,34 @@ function getDefaultSettings() {
 				enable: true,
 				blockList: []
 			},
-			live: {
-				enable: true,
-				blockList: []
+			recommend: {
+				enable: true
 			},
-			component: {
+			video: {
 				enable: true,
-				componentList: [],
-				blockList: []
+				viewThresh: 50000
 			}
 		},
-		videoDownloader: {
+		pixiv: {
+			enable: true
+		},
+		video: {
+			enable: true
+		},
+		jb51code: {
+			enable: true
+		},
+		zhihu: {
 			enable: true
 		}
 	};
-	return settings;
+	return setting;
 }
-/**
- * 下载指定的数据
- * @param {BlobPart[]} dataList 数据
- * @param {string} filename 文件名
- */
-function downloadData(dataList, filename) {
-	let blobData = new Blob(dataList);
-	let anchor = $('<a></a>');
-	anchor.attr({
-		'href': window.URL.createObjectURL(blobData),
-		'download': filename
-	});
-	anchor[0].click();
-}
+
 
 class VideoDownloader {
 	constructor() {
 		this.videotabsMap = new Map();
-	}
-	/**
-	 * 请求二进制数据
-	 * @param {string} url url
-	 * @param {(data: ArrayBuffer) => void} callback 回调函数
-	 */
-	requestBinary(url, callback) {
-		const xhr = new XMLHttpRequest();
-		xhr.open('GET', url, true);
-		xhr.responseType = 'arraybuffer';
-		xhr.onload = function(oEvent) {
-			callback(xhr.response);
-		};
-		xhr.send();
 	}
 	/**
 	 * 获取m3u8 url
@@ -84,61 +64,6 @@ class VideoDownloader {
 		}
 	}
 	/**
-	 * 根据m3u8文件获取分片url
-	 * @param {string} manifestUrl m3u8文件url
-	 * @param {string} videoPieceName 分片文件名
-	 * @returns 分片url
-	 */
-	getPieceUrl(manifestUrl, videoPieceName) {
-		const questPos = manifestUrl.indexOf('?');
-		let rightPart = '';
-		if (questPos > -1) {
-			rightPart = manifestUrl.substring(questPos + 1);
-		}
-		let manifestRelativePath;
-		if (rightPart.match(/(https?:\/\/.*\/).+\.m3u8/)) {
-			manifestRelativePath = rightPart.match(/(https?:\/\/.*\/).+\.m3u8/)[1];
-		} else {
-			manifestRelativePath = manifestUrl.match(/(https?:\/\/.*\/).+\.m3u8/)[1];
-		}
-		if (videoPieceName.startsWith('/')) {
-			const rootPath = manifestRelativePath.match(/(https?:\/\/.*?)\//)[1];
-			return rootPath + videoPieceName;
-		}
-		return manifestRelativePath + videoPieceName;
-	}
-	/**
-	 * 根据m3u8文件下载视频
-	 * @param {string} fileUrl m3u8文件url
-	 * @param {string} filename 保存文件名
-	 * @param {(pieceName: string, index: number, length: number) => void} onStep 已下载第index，总length个分片后回调
-	 * @param {(isSuccess: boolean) => void} onFinish 完成后回调
-	 */
-	downloadVideoFromM3U8(fileUrl, filename, onStep, onFinish) {
-		$.get(fileUrl, (manifestData) => {
-			// get m3u8 manifest file
-			const videoPieceList = manifestData.split('\n').filter(line => line.includes('.ts'));
-			if (videoPieceList.length === 0) {
-				onFinish(false);
-				return;
-			}
-			// request each piece and merge to one file and download
-			const dataList = [];
-			videoPieceList.forEach((pieceName, index) => {
-				this.requestBinary(this.getPieceUrl(fileUrl, pieceName), (binaryData) => {
-					dataList.push(binaryData);
-					if (onStep) {
-						onStep(pieceName, dataList.length, videoPieceList.length);
-					}
-					if (index === videoPieceList.length - 1) {
-						downloadData(dataList, filename);
-						onFinish(true);
-					}
-				});
-			});
-		});
-	}
-	/**
 	 * 获取tabs下检测到的视频url
 	 * @param {number} tabsId tabsId
 	 * @returns 视频url列表
@@ -154,11 +79,14 @@ class VideoDownloader {
 	 * @param {number} tabsId tabsId
 	 * @param {string} videoUrl video url
 	 */
-	addVideoItem(tabsId, videoUrl) {
+	addVideoItem(tabsId, indexUrl, indexSize) {
 		if (!this.videotabsMap.has(tabsId)) {
 			this.videotabsMap.set(tabsId, []);
 		}
-		this.videotabsMap.get(tabsId).push(videoUrl);
+		this.videotabsMap.get(tabsId).push({
+			indexUrl,
+			indexSize
+		});
 	}
 	/**
 	 * 清空url
@@ -172,7 +100,6 @@ class VideoDownloader {
 }
 
 const videoDownloader = new VideoDownloader();
-let globalSettings = getDefaultSettings();
 
 /**
  * 获取tabs下检测到的视频url
@@ -182,43 +109,32 @@ let globalSettings = getDefaultSettings();
 function getVideoList(tabsId) {
 	return videoDownloader.getVideoList(tabsId);
 }
-/**
- * 根据m3u8文件下载视频
- * @param {string} fileUrl m3u8文件url
- * @param {string} filename 保存文件名
- * @param {(pieceName: string, index: number, length: number) => void} onStep 已下载第index，总length个分片后回调
- * @param {(isSuccess: boolean) => void} onFinish 完成后回调
- */
-function downloadVideoFromM3U8(fileUrl, filename, onStep, onFinish) {
-	return videoDownloader.downloadVideoFromM3U8(fileUrl, filename, onStep, onFinish);
-}
 
 /**
  * 获取设置
- * @param {(result: object) => void} callback 回调
+ * @returns Promise<any>
  */
-function getSettings(callback) {
-	chrome.storage.sync.get(['settings'], result => {
-		globalSettings = result['settings'];
-		callback(result);
-	});
+async function getSetting() {
+	const result = await chrome.storage.local.get(['setting'])
+	let setting = result.setting
+	if(!setting) {
+		setting = getDefaultSetting()
+	}
+	return setting
 }
 /**
  * 保存设置
- * @param {object} settings 设置
- * @param {(result: object) => void} callback 回调
+ * @param {any} setting 设置
+ * @returns Promise<any>
  */
-function setSettings(settings, callback = () => { }) {
-	chrome.storage.sync.set({ settings }, result => {
-		callback(result);
-	});
-	globalSettings = settings;
+function setSetting(setting) {
+	return chrome.storage.local.set({ setting })
 }
 /**
  * 重置设置
  */
-function resetSettings() {
-	setSettings(getDefaultSettings());
+function resetSetting() {
+	setSetting(getDefaultSetting());
 }
 
 /**
@@ -236,8 +152,8 @@ function exportList(blockList) {
  */
 function importList(data, file, callback) {
 	let reader = new FileReader();
-  reader.readAsText(file, 'utf-8');
-	
+  	reader.readAsText(file, 'utf-8');
+
 	reader.onload = function () {
 		let blockList = JSON.parse(this.result);
 		if (!(blockList instanceof Array) || blockList.some(value => !(typeof value === 'string'))) {
@@ -250,41 +166,25 @@ function importList(data, file, callback) {
 		}
   };
 }
-
-/**
- * 刷新bilibili首页板块列表
- * @param {(isSuccess: boolean, message: string) => void} callback 回调，返回是否成功和失败消息
- */
-function refreshBilibiliComponentList(callback = () => { }) {
-	let queryOptions = { active: true, currentWindow: true };
-	chrome.tabs.query(queryOptions, tabs => {
-		let tabsId = tabs[0].id;
-		if (!/www.bilibili.com(\/\?.*)?/.test(tabs[0].url)) {
-			callback(false, '请在bilibili首页进行操作');
-			return;
-		}
-		chrome.tabs.sendMessage(tabsId, { type: 'refresh' }, response => {
-			if (!response) {
-				callback(false, '请刷新网页后再操作');
-				return;
-			}
-			globalSettings.bilibili.component.componentList = response;
-			setSettings(globalSettings, () => { });
-			callback(true, '刷新成功');
-		});
-	});
-}
-
 /** --------------- 所有的 Chrome 事件监听 --------------- */
-
-chrome.webRequest.onCompleted.addListener((obj) => {
-	if (!globalSettings.videoDownloader.enable) {
+chrome.webRequest.onCompleted.addListener(async (obj) => {
+	const setting = await getSetting()
+	if (!setting.video.enable) {
 		return;
 	}
-	if (obj.url.includes("m3u8") && !obj.initiator.includes('chrome-extension')) {
-		videoDownloader.addVideoItem(obj.tabId, videoDownloader.getM3U8Url(obj.url));
+	
+	if (obj.url.includes(".m3u8") && !obj.initiator.includes('chrome-extension')) {
+		let indexSize = -1
+		if(obj.responseHeaders) {
+			let header = obj.responseHeaders.find(v => v.name === 'content-length')
+			if(header) {
+				indexSize = header.value
+			}
+		}
+		console.log(obj.url)
+		videoDownloader.addVideoItem(obj.tabId, videoDownloader.getM3U8Url(obj.url), indexSize);
 	}
-}, { urls: ['<all_urls>'] });
+}, { urls: ['<all_urls>'] }, ['responseHeaders']);
 
 chrome.tabs.onUpdated.addListener((tabsId, changeInfo, tabs) => {
 	if (changeInfo.status === 'loading') {
@@ -292,19 +192,32 @@ chrome.tabs.onUpdated.addListener((tabsId, changeInfo, tabs) => {
 	}
 });
 
-chrome.runtime.onInstalled.addListener(details => {
-	getSettings(result => {
-		let { settings } = result;
-		if (!settings) {
-			resetSettings();
-		}
-	});
+chrome.runtime.onInstalled.addListener(async details => {
+	console.log('[Browsing Tool] Installed')
+	const setting = await getSetting()
+	setSetting(setting)
 });
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-	if (request.type === 'setting') {
-		sendResponse(globalSettings);
+	switch(request.type) {
+		case 'setting':
+			getSetting().then(setting => {
+				sendResponse(setting)
+			})
+			break
+		case 'set-setting':
+			setSetting(request.setting).then(res => {
+				sendResponse()
+			})
+			break
+		case 'video-list':
+			sendResponse(getVideoList(request.tabId))
+			break
+		default:
+			break
 	}
+
+	return true
 });
 
 // FIXME Unchecked runtime.lastError: The message port closed before a response was received.
